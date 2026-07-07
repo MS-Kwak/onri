@@ -1,26 +1,43 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F7F5F1;
+  --foreground: #222834;
+  --surface: #ffffff;
+  --surface-secondary: #F7F5F1;
+}
+
+.dark {
+  --background: #1C2233;
+  --foreground: #E9E4D9;
+  --surface: #2A3350;
+  --surface-secondary: #1C2233;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-surface: var(--surface);
+  --color-surface-secondary: var(--surface-secondary);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-navy: #1C2233;
+  --color-navy-light: #2A3350;
+  --color-gold: #D3A859;
+  --color-gold-soft: #B79A62;
+  --color-cream: #E9E4D9;
+  --color-ink: #222834;
+  --color-gray: #6B7280;
+  --color-line: #D8D3C8;
+  --color-paper: #F7F5F1;
+
+  --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
+    BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
+    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji",
+    "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
 }
