@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ToastProvider } from "@/components/toast-provider";
 
 export const metadata: Metadata = {
   title: "온리(Onri) — 온전한 나로 쉬어가는 곳",
@@ -31,6 +32,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh font-sans antialiased">
         <ThemeProvider>{children}</ThemeProvider>
+        <ToastProvider />
       </body>
     </html>
   );

@@ -1,30 +1,47 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import * as Select from "@radix-ui/react-select";
-import * as Checkbox from "@radix-ui/react-checkbox";
-import { ChevronDown, Check, ArrowLeft, ShieldCheck, RefreshCw } from "lucide-react";
-import { toast, Toaster } from "sonner";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import * as Select from '@radix-ui/react-select';
+import * as Checkbox from '@radix-ui/react-checkbox';
+import {
+  ChevronDown,
+  Check,
+  ArrowLeft,
+  ShieldCheck,
+  RefreshCw,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
-const CARRIERS = ["SKT", "KT", "LG U+", "SKT 알뜰폰", "KT 알뜰폰", "LG U+ 알뜰폰"];
+const CARRIERS = [
+  'SKT',
+  'KT',
+  'LG U+',
+  'SKT 알뜰폰',
+  'KT 알뜰폰',
+  'LG U+ 알뜰폰',
+];
 
 export default function VerifyPage() {
   const router = useRouter();
 
-  const [carrier, setCarrier] = useState("");
-  const [name, setName] = useState("");
-  const [birthPrefix, setBirthPrefix] = useState("");
-  const [genderDigit, setGenderDigit] = useState("");
-  const [phone, setPhone] = useState("");
-  const [verifyCode, setVerifyCode] = useState("");
+  const [carrier, setCarrier] = useState('');
+  const [name, setName] = useState('');
+  const [birthPrefix, setBirthPrefix] = useState('');
+  const [genderDigit, setGenderDigit] = useState('');
+  const [phone, setPhone] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
   const [codeSent, setCodeSent] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [timer, setTimer] = useState(0);
 
   const canRequestCode =
-    carrier && name && birthPrefix.length === 6 && genderDigit.length === 1 && phone.length >= 10;
+    carrier &&
+    name &&
+    birthPrefix.length === 6 &&
+    genderDigit.length === 1 &&
+    phone.length >= 10;
   const canProceed = codeSent && verifyCode.length === 6 && agreed;
 
   useEffect(() => {
@@ -36,44 +53,71 @@ export default function VerifyPage() {
   const handleRequestCode = () => {
     setCodeSent(true);
     setTimer(180);
-    toast.success("인증번호가 발송되었습니다", {
-      description: "3분 내에 입력해주세요.",
+    toast.success('인증번호가 발송되었습니다', {
+      description: '3분 내에 입력해주세요.',
     });
   };
 
   const handleResend = () => {
     setTimer(180);
-    setVerifyCode("");
-    toast("인증번호를 다시 발송했습니다");
+    setVerifyCode('');
+    toast('인증번호를 다시 발송했습니다');
   };
 
   const handleNext = () => {
-    router.push("/onboarding/profile");
+    router.push('/onboarding/profile');
   };
 
   const formatTime = (s: number) =>
-    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
+    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <main className="flex min-h-dvh flex-col bg-navy">
-      <Toaster position="top-center" theme="dark" richColors />
+      {/* 고정 헤더 + 프로그레스 */}
+      <div className="sticky top-0 z-40 bg-navy">
+        <header className="flex items-center gap-3 px-5 pt-14 pb-2">
+          <button
+            onClick={() => router.back()}
+            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-lg font-semibold text-cream">
+            본인인증
+          </h1>
+        </header>
 
-      {/* 헤더 */}
-      <header className="flex items-center gap-3 px-5 pt-14 pb-4">
-        <button
-          onClick={() => router.back()}
-          className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-semibold text-cream">본인인증</h1>
-      </header>
+        <div className="px-6 pt-2 pb-4">
+          <div className="flex gap-1.5">
+            <div className="flex flex-1 flex-col items-center gap-1.5">
+              <div className="h-1 w-full rounded-full bg-gold" />
+              <span className="text-[10px] text-gold">본인인증</span>
+            </div>
+            <div className="flex flex-1 flex-col items-center gap-1.5">
+              <div className="h-1 w-full rounded-full bg-navy-light" />
+              <span className="text-[10px] text-cream/30">
+                프로필 설정
+              </span>
+            </div>
+            <div className="flex flex-1 flex-col items-center gap-1.5">
+              <div className="h-1 w-full rounded-full bg-navy-light" />
+              <span className="text-[10px] text-cream/30">완료</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-px bg-navy-light" />
+      </div>
 
       {/* 안내 */}
-      <div className="flex items-start gap-2.5 px-6 pb-6">
-        <ShieldCheck size={18} className="mt-0.5 shrink-0 text-gold" />
+      <div className="flex items-start gap-2.5 px-6 pt-6 pb-6">
+        <ShieldCheck
+          size={18}
+          className="mt-0.5 shrink-0 text-gold"
+        />
         <p className="text-sm leading-relaxed text-cream/60">
-          만 19세 이상만 가입할 수 있습니다.<br />
+          만 19세 이상만 가입할 수 있습니다.
+          <br />
           휴대폰 본인인증이 필요합니다.
         </p>
       </div>
@@ -130,20 +174,26 @@ export default function VerifyPage() {
             placeholder="생년월일 6자리"
             maxLength={6}
             value={birthPrefix}
-            onChange={(e) => setBirthPrefix(e.target.value.replace(/\D/g, ""))}
-            className="flex-1 rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+            onChange={(e) =>
+              setBirthPrefix(e.target.value.replace(/\D/g, ''))
+            }
+            className="min-w-0 flex-1 rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
           />
-          <span className="text-cream/30">—</span>
+          <span className="shrink-0 text-cream/30">—</span>
           <input
             type="text"
             inputMode="numeric"
             maxLength={1}
             placeholder="●"
             value={genderDigit}
-            onChange={(e) => setGenderDigit(e.target.value.replace(/\D/g, ""))}
-            className="w-11 rounded-xl border border-navy-light bg-navy-light px-3 py-3 text-center text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+            onChange={(e) =>
+              setGenderDigit(e.target.value.replace(/\D/g, ''))
+            }
+            className="w-10 shrink-0 rounded-xl border border-navy-light bg-navy-light px-2 py-3 text-center text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
           />
-          <span className="tracking-[0.25em] text-cream/25">● ● ● ● ● ●</span>
+          <span className="shrink-0 whitespace-nowrap text-sm text-cream/25">
+            ● ● ● ● ● ●
+          </span>
         </div>
 
         {/* 휴대폰 번호 */}
@@ -152,7 +202,9 @@ export default function VerifyPage() {
           inputMode="numeric"
           placeholder="휴대폰 번호 (- 없이)"
           value={phone}
-          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
+          onChange={(e) =>
+            setPhone(e.target.value.replace(/\D/g, ''))
+          }
           className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
         />
 
@@ -175,7 +227,9 @@ export default function VerifyPage() {
                 placeholder="인증번호 6자리"
                 maxLength={6}
                 value={verifyCode}
-                onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) =>
+                  setVerifyCode(e.target.value.replace(/\D/g, ''))
+                }
                 className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-16 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
               />
               {timer > 0 && (
@@ -205,7 +259,8 @@ export default function VerifyPage() {
             </Checkbox.Indicator>
           </Checkbox.Root>
           <span className="cursor-pointer text-xs leading-relaxed text-cream/50">
-            본인확인 서비스 이용약관, 개인정보 수집·이용 동의 (민감정보 포함)
+            본인확인 서비스 이용약관, 개인정보 수집·이용 동의
+            (민감정보 포함)
           </span>
         </div>
       </div>
