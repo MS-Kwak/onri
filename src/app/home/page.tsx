@@ -112,7 +112,7 @@ export default function HomePage() {
   const handleHeart = (id: string) => {
     const target = MOCK_PROFILES.find((p) => p.id === id);
     if (target) {
-      toast.success(`${target.nickname}님에게 하트를 보냈어요`, {
+      toast.success(`${target.nickname}님에게 시그널을 보냈어요`, {
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
     }

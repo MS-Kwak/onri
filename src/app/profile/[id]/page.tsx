@@ -51,9 +51,10 @@ export default function ProfileDetailPage() {
   const handleSendHeart = useCallback(async () => {
     if (heartStatus !== 'idle') return;
 
-    if (balance < HEART_COST.SEND) {
+    if (balance < HEART_COST.SIGNAL) {
       toast.error('하트가 부족해요', {
         description: '출석체크나 충전으로 하트를 모아보세요',
+        icon: <Heart size={16} className="text-cream/40" />,
       });
       return;
     }
@@ -62,10 +63,11 @@ export default function ProfileDetailPage() {
 
     await new Promise((r) => setTimeout(r, 800));
 
-    const success = deduct(HEART_COST.SEND);
+    const success = deduct(HEART_COST.SIGNAL);
     if (success) {
       setHeartStatus('sent');
-      toast.success(`${profile?.nickname}님에게 하트를 보냈어요`, {
+      toast.success(`${profile?.nickname}님에게 시그널을 보냈어요`, {
+        description: '하트 1개를 사용했어요',
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
     } else {
@@ -317,7 +319,7 @@ export default function ProfileDetailPage() {
             ) : (
               <>
                 <Heart size={18} className="fill-navy" />
-                하트 보내기
+                시그널 보내기
               </>
             )}
           </button>

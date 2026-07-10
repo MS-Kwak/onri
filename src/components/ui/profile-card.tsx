@@ -76,7 +76,7 @@ export function ProfileCard({
               onHeart?.(profile.id);
             }}
             className="rounded-full p-1.5 text-gold transition-colors hover:bg-gold/10 active:bg-gold/20"
-            aria-label="하트 보내기"
+            aria-label="시그널 보내기"
           >
             <Heart size={20} />
           </button>
