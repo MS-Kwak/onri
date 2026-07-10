@@ -1,14 +1,14 @@
 export type Identity =
-  | "FTM"
-  | "MTF"
-  | "NONBINARY"
-  | "TRANS"
-  | "CIS"
-  | "OTHER";
+  | 'FTM'
+  | 'MTF'
+  | 'NONBINARY'
+  | 'TRANS'
+  | 'CIS'
+  | 'OTHER';
 
-export type RelationGoal = "DATING" | "FRIEND" | "INFO";
+export type RelationGoal = 'DATING' | 'FRIEND' | 'INFO';
 
-export type Visibility = "public" | "private";
+export type Visibility = 'public' | 'private';
 
 export type Profile = {
   id: string;
@@ -20,6 +20,8 @@ export type Profile = {
   identity: Identity;
   lookingFor: RelationGoal[];
   bio: string;
+  interests: string[];
+  activeTime: string;
   visibility: {
     identity: Visibility;
     region: Visibility;
@@ -32,7 +34,11 @@ export type HeartBalance = {
   balance: number;
 };
 
-export type HeartSendStatus = "PENDING" | "ACCEPTED" | "DECLINED" | "EXPIRED";
+export type HeartSendStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'DECLINED'
+  | 'EXPIRED';
 
 export type HeartSend = {
   id: string;
@@ -72,11 +78,11 @@ export type BlockRecord = {
 };
 
 export type ReportReason =
-  | "SPAM"
-  | "HARASSMENT"
-  | "FAKE_PROFILE"
-  | "INAPPROPRIATE"
-  | "OTHER";
+  | 'SPAM'
+  | 'HARASSMENT'
+  | 'FAKE_PROFILE'
+  | 'INAPPROPRIATE'
+  | 'OTHER';
 
 export type Report = {
   id: string;

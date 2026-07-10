@@ -2,7 +2,18 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Eye, EyeOff, ShieldAlert } from 'lucide-react';
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  ShieldAlert,
+  MapPin,
+  Sparkles,
+  HeartHandshake,
+  UserRound,
+  Lock,
+} from 'lucide-react';
+import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
 import { Input } from '@/components/ui/input';
@@ -22,6 +33,25 @@ const IDENTITIES: Identity[] = [
   'OTHER',
 ];
 const GOALS: RelationGoal[] = ['DATING', 'FRIEND', 'INFO'];
+const REGIONS = [
+  '서울',
+  '경기',
+  '부산',
+  '인천',
+  '대전',
+  '대구',
+  '광주',
+  '울산',
+  '세종',
+  '강원',
+  '충북',
+  '충남',
+  '전북',
+  '전남',
+  '경북',
+  '경남',
+  '제주',
+];
 
 const STEPS = [
   { label: '본인인증', done: true },
@@ -37,6 +67,7 @@ export default function ProfileSetupPage() {
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [otherIdentity, setOtherIdentity] = useState('');
   const [goals, setGoals] = useState<RelationGoal[]>([]);
+  const [regions, setRegions] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<{
     identity: Visibility;
     region: Visibility;
@@ -70,6 +101,7 @@ export default function ProfileSetupPage() {
     nicknameValid &&
     identityValid &&
     goals.length > 0 &&
+    regions.length > 0 &&
     sensitiveAgreed;
 
   const handleNext = () => {
@@ -124,9 +156,12 @@ export default function ProfileSetupPage() {
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-6 pb-4">
         {/* 닉네임 */}
         <section>
-          <h2 className="mb-1 text-base font-semibold text-cream">
-            닉네임
-          </h2>
+          <div className="mb-1 flex items-center gap-1.5">
+            <UserRound size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              닉네임
+            </h2>
+          </div>
           <p className="mb-4 text-xs text-cream/50">
             온리에서 사용할 이름이에요 (2~10자)
           </p>
@@ -144,14 +179,17 @@ export default function ProfileSetupPage() {
         </section>
 
         {/* 정체성 선택 */}
-        <section>
-          <h2 className="mb-1 text-base font-semibold text-cream">
-            나를 어떻게 표현할까요?
-          </h2>
-          <p className="mb-4 text-xs text-cream/50">
+        <section className="-mx-6">
+          <div className="mb-1 flex items-center gap-1.5 px-6">
+            <Sparkles size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              나를 어떻게 표현할까요?
+            </h2>
+          </div>
+          <p className="mb-4 px-6 text-xs text-cream/50">
             하나를 선택해주세요
           </p>
-          <div className="flex flex-wrap gap-2">
+          <PillCarousel>
             {IDENTITIES.map((id) => (
               <Pill
                 key={id}
@@ -164,9 +202,9 @@ export default function ProfileSetupPage() {
                 }}
               />
             ))}
-          </div>
+          </PillCarousel>
           {identity === 'OTHER' && (
-            <div className="mt-3">
+            <div className="mt-3 px-6">
               <Input
                 placeholder="어떻게 표현하고 싶은지 알려주세요"
                 value={otherIdentity}
@@ -182,29 +220,67 @@ export default function ProfileSetupPage() {
         </section>
 
         {/* 관계 목적 */}
-        <section>
-          <h2 className="mb-1 text-base font-semibold text-cream">
-            무엇을 찾고 있나요?
-          </h2>
-          <p className="mb-4 text-xs text-cream/50">복수 선택 가능</p>
-          <div className="flex flex-wrap gap-2">
+        <section className="-mx-6">
+          <div className="mb-1 flex items-center gap-1.5 px-6">
+            <HeartHandshake size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              무엇을 찾고 있나요?
+            </h2>
+          </div>
+          <p className="mb-4 px-6 text-xs text-cream/50">
+            복수 선택 가능
+          </p>
+          <PillCarousel>
             {GOALS.map((goal) => (
               <Pill
                 key={goal}
                 label={RELATION_GOAL_LABELS[goal]}
-                variant="active"
+                variant="identity"
                 selected={goals.includes(goal)}
                 onPress={() => toggleGoal(goal)}
               />
             ))}
+          </PillCarousel>
+        </section>
+
+        {/* 지역 선택 */}
+        <section className="-mx-6">
+          <div className="mb-1 flex items-center gap-1.5 px-6">
+            <MapPin size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              지역
+            </h2>
           </div>
+          <p className="mb-4 px-6 text-xs text-cream/50">
+            활동하는 지역을 선택해주세요 (복수 선택 가능)
+          </p>
+          <PillCarousel>
+            {REGIONS.map((r) => (
+              <Pill
+                key={r}
+                label={r}
+                variant="identity"
+                selected={regions.includes(r)}
+                onPress={() =>
+                  setRegions((prev) =>
+                    prev.includes(r)
+                      ? prev.filter((v) => v !== r)
+                      : [...prev, r],
+                  )
+                }
+              />
+            ))}
+          </PillCarousel>
         </section>
 
         {/* 노출 범위 */}
         <section>
-          <h2 className="mb-1 text-base font-semibold text-cream">
-            공개 범위
-          </h2>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Lock size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              공개 범위
+            </h2>
+          </div>
           <p className="mb-4 text-xs text-cream/50">
             각 항목의 공개/비공개를 직접 제어할 수 있어요
           </p>
@@ -280,5 +356,22 @@ export default function ProfileSetupPage() {
         </Button>
       </div>
     </main>
+  );
+}
+
+function PillCarousel({ children }: { children: React.ReactNode }) {
+  const [emblaRef] = useEmblaCarousel({
+    dragFree: true,
+    containScroll: 'trimSnaps',
+    align: 'start',
+  });
+
+  return (
+    <div className="overflow-hidden" ref={emblaRef}>
+      <div className="flex gap-2 pl-6">
+        {children}
+        <div className="shrink-0 w-6" />
+      </div>
+    </div>
   );
 }
