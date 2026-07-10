@@ -177,10 +177,16 @@ export default function ProfileDetailPage() {
               {profile.age}
             </span>
           )}
-          {profile.isVerified && (
+          {profile.verificationStatus === 'approved' && (
             <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
               <ShieldCheck size={12} />
               셀카 인증
+            </span>
+          )}
+          {profile.verificationStatus === 'pending' && (
+            <span className="flex items-center gap-1 rounded-full bg-cream/10 px-2.5 py-0.5 text-[11px] font-medium text-cream/40">
+              <Clock size={12} />
+              인증 검토 중
             </span>
           )}
         </div>

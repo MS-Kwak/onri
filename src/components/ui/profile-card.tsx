@@ -51,7 +51,7 @@ export function ProfileCard({
             </div>
           </div>
         )}
-        {profile.isVerified && (
+        {profile.verificationStatus === 'approved' && (
           <span className="absolute top-2 left-2 rounded-full bg-gold px-2 py-0.5 text-xs font-medium text-navy">
             셀카 인증
           </span>

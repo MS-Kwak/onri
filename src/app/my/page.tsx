@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   User,
@@ -22,12 +22,14 @@ import {
   Crown,
   Check,
   Info,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
 import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
 import { IDENTITY_LABELS } from '@/lib/constants';
+import type { VerificationStatus } from '@/types';
 import { useHeartStore } from '@/store';
 import { ATTENDANCE_REWARD, BRAND } from '@/lib/constants';
 
@@ -41,6 +43,7 @@ function getMockAttendance() {
 
 export default function MyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { balance, add } = useHeartStore();
   const profile = MOCK_CURRENT_USER;
 
@@ -94,6 +97,15 @@ export default function MyPage() {
       });
     }
   };
+
+  const [verificationStatus] = useState(() => {
+    const param = searchParams.get('verification');
+    if (param === 'pending') return 'pending' as const;
+    if (profile.verificationStatus === 'approved')
+      return 'approved' as const;
+    return profile.verificationStatus;
+  });
+  const isVerified = verificationStatus === 'approved';
 
   const profilePhotoRef = useRef<HTMLInputElement>(null);
   const [profilePhoto, setProfilePhoto] = useState(
@@ -153,7 +165,7 @@ export default function MyPage() {
               <span className="absolute inset-0 flex items-center justify-center rounded-full bg-navy/50 opacity-0 transition-opacity group-hover:opacity-100">
                 <Camera size={18} className="text-cream" />
               </span>
-              {profile.isVerified && (
+              {isVerified && (
                 <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-gold ring-2 ring-navy">
                   <ShieldCheck size={13} className="text-navy" />
                 </span>
@@ -165,7 +177,7 @@ export default function MyPage() {
                 <h2 className="text-xl font-bold text-cream">
                   {profile.nickname}
                 </h2>
-                {profile.isVerified && (
+                {isVerified && (
                   <span className="rounded-md bg-gold/15 px-2 py-0.5 text-[10px] font-semibold text-gold">
                     셀카 인증
                   </span>
@@ -194,23 +206,10 @@ export default function MyPage() {
               <Pencil size={13} />
               프로필 편집
             </button>
-            {profile.isVerified ? (
-              <button
-                disabled
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-cream/30"
-              >
-                <ShieldCheck size={13} />
-                셀카 인증 완료
-              </button>
-            ) : (
-              <button
-                onClick={() => toast('셀카 인증 (준비 중)')}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gold/10 py-2.5 text-xs font-medium text-gold transition-colors hover:bg-gold/15"
-              >
-                <Camera size={13} />
-                셀카 인증하기
-              </button>
-            )}
+            <VerificationButton
+              status={verificationStatus}
+              onStart={() => router.push('/my/selfie-verify')}
+            />
           </div>
         </section>
 
@@ -443,4 +442,55 @@ function MenuItem({
       )}
     </button>
   );
+}
+
+function VerificationButton({
+  status,
+  onStart,
+}: {
+  status: VerificationStatus;
+  onStart: () => void;
+}) {
+  switch (status) {
+    case 'approved':
+      return (
+        <button
+          disabled
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-cream/30"
+        >
+          <ShieldCheck size={13} />
+          셀카 인증 완료
+        </button>
+      );
+    case 'pending':
+      return (
+        <button
+          disabled
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-amber-400/60"
+        >
+          <Clock size={13} />
+          검토 중
+        </button>
+      );
+    case 'rejected':
+      return (
+        <button
+          onClick={onStart}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-500/10 py-2.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/15"
+        >
+          <Camera size={13} />
+          재인증하기
+        </button>
+      );
+    default:
+      return (
+        <button
+          onClick={onStart}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gold/10 py-2.5 text-xs font-medium text-gold transition-colors hover:bg-gold/15"
+        >
+          <Camera size={13} />
+          셀카 인증하기
+        </button>
+      );
+  }
 }

@@ -10,6 +10,12 @@ export type RelationGoal = 'DATING' | 'FRIEND' | 'INFO';
 
 export type Visibility = 'public' | 'private';
 
+export type VerificationStatus =
+  | 'none'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
 export type Profile = {
   id: string;
   nickname: string;
@@ -17,6 +23,7 @@ export type Profile = {
   region: string;
   thumbnailUrl: string;
   isVerified: boolean;
+  verificationStatus: VerificationStatus;
   identity: Identity;
   lookingFor: RelationGoal[];
   bio: string;
