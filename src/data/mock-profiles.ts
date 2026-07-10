@@ -12,7 +12,7 @@ export const MOCK_CURRENT_USER: Profile = {
   bio: '음악 좋아하고 조용한 카페를 좋아해요',
   interests: ['음악', '카페', '독서'],
   activeTime: '저녁',
-  visibility: { identity: 'public', region: 'public' },
+  visibility: { region: 'public', age: 'public' },
   createdAt: '2026-07-01T00:00:00Z',
 };
 
@@ -29,7 +29,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '같이 산책하면서 이야기 나눠요',
     interests: ['산책', '요리', '사진'],
     activeTime: '오후',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-02T00:00:00Z',
   },
   {
@@ -44,7 +44,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '영화랑 전시 좋아해요',
     interests: ['영화', '전시', '그림'],
     activeTime: '저녁',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-02T00:00:00Z',
   },
   {
@@ -59,7 +59,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '편하게 대화할 수 있는 사람을 찾고 있어요',
     interests: [],
     activeTime: '',
-    visibility: { identity: 'public', region: 'private' },
+    visibility: { region: 'private', age: 'public' },
     createdAt: '2026-07-03T00:00:00Z',
   },
   {
@@ -74,7 +74,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '운동하는 거 좋아합니다',
     interests: ['운동', '등산', '자전거'],
     activeTime: '오전',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-03T00:00:00Z',
   },
   {
@@ -89,7 +89,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '카페 탐방 좋아해요',
     interests: ['카페', '디저트', '여행'],
     activeTime: '오후',
-    visibility: { identity: 'private', region: 'public' },
+    visibility: { region: 'public', age: 'private' },
     createdAt: '2026-07-04T00:00:00Z',
   },
   {
@@ -104,7 +104,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '정보 교류하고 싶어요',
     interests: ['코딩', '게임', '음악'],
     activeTime: '밤',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-04T00:00:00Z',
   },
   {
@@ -119,7 +119,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '진솔한 대화를 좋아해요',
     interests: [],
     activeTime: '',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-05T00:00:00Z',
   },
   {
@@ -134,7 +134,7 @@ export const MOCK_PROFILES: Profile[] = [
     bio: '고양이 두 마리 키우고 있어요',
     interests: ['고양이', '넷플릭스', '요리'],
     activeTime: '밤',
-    visibility: { identity: 'public', region: 'public' },
+    visibility: { region: 'public', age: 'public' },
     createdAt: '2026-07-05T00:00:00Z',
   },
 ];

@@ -23,8 +23,8 @@ export type Profile = {
   interests: string[];
   activeTime: string;
   visibility: {
-    identity: Visibility;
     region: Visibility;
+    age: Visibility;
   };
   createdAt: string;
 };

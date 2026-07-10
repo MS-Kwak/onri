@@ -22,10 +22,7 @@ export function ProfileCard({
   onPress,
   className,
 }: ProfileCardProps) {
-  const visibleIdentity =
-    profile.visibility.identity === 'public'
-      ? profile.identity
-      : null;
+  const visibleAge = profile.visibility.age === 'public';
 
   return (
     <div
@@ -56,7 +53,7 @@ export function ProfileCard({
         )}
         {profile.isVerified && (
           <span className="absolute top-2 left-2 rounded-full bg-gold px-2 py-0.5 text-xs font-medium text-navy">
-            인증
+            셀카 인증
           </span>
         )}
       </div>
@@ -67,7 +64,9 @@ export function ProfileCard({
             <span className="text-base font-semibold text-foreground">
               {profile.nickname}
             </span>
-            <span className="text-sm text-gray">{profile.age}</span>
+            {visibleAge && (
+              <span className="text-sm text-gray">{profile.age}</span>
+            )}
           </div>
 
           <button
@@ -89,12 +88,10 @@ export function ProfileCard({
         )}
 
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-          {visibleIdentity && (
-            <span className="rounded-md bg-gold/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-gold">
-              {IDENTITY_LABELS[visibleIdentity]}
-            </span>
-          )}
-          {visibleIdentity && profile.lookingFor.length > 0 && (
+          <span className="rounded-md bg-gold/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-gold">
+            {IDENTITY_LABELS[profile.identity]}
+          </span>
+          {profile.lookingFor.length > 0 && (
             <span className="text-[10px] text-cream/20">|</span>
           )}
           {profile.lookingFor.slice(0, 2).map((goal, i) => (

@@ -41,12 +41,9 @@ export default function ProfileDetailPage() {
   const { balance, deduct } = useHeartStore();
 
   const isMyProfile = profileId === MOCK_CURRENT_USER.id;
-  const visibleIdentity =
-    profile?.visibility.identity === 'public'
-      ? profile.identity
-      : null;
   const visibleRegion =
     profile?.visibility.region === 'public' ? profile.region : null;
+  const visibleAge = profile?.visibility.age === 'public';
 
   const handleSendHeart = useCallback(async () => {
     if (heartStatus !== 'idle') return;
@@ -170,27 +167,29 @@ export default function ProfileDetailPage() {
 
       {/* 프로필 정보 */}
       <div className="-mt-16 relative z-10 px-5">
-        {/* 닉네임 · 나이 · 인증 */}
+        {/* 닉네임 · 나이 · 셀카 인증 */}
         <div className="flex items-center gap-2.5">
           <h1 className="text-2xl font-bold text-cream">
             {profile.nickname}
           </h1>
-          <span className="text-lg text-cream/50">{profile.age}</span>
+          {visibleAge && (
+            <span className="text-lg text-cream/50">
+              {profile.age}
+            </span>
+          )}
           {profile.isVerified && (
             <span className="flex items-center gap-1 rounded-full bg-gold/15 px-2.5 py-0.5 text-[11px] font-semibold text-gold">
               <ShieldCheck size={12} />
-              인증됨
+              셀카 인증
             </span>
           )}
         </div>
 
         {/* 정체성 · 관계목적 태그 */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          {visibleIdentity && (
-            <span className="rounded-lg bg-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-gold">
-              {IDENTITY_LABELS[visibleIdentity]}
-            </span>
-          )}
+          <span className="rounded-lg bg-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-gold">
+            {IDENTITY_LABELS[profile.identity]}
+          </span>
           {profile.lookingFor.map((goal) => (
             <span
               key={goal}

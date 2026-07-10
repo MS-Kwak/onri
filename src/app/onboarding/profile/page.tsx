@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ArrowLeft,
   Eye,
@@ -12,7 +13,27 @@ import {
   HeartHandshake,
   UserRound,
   Lock,
+  Camera,
+  X,
+  ImagePlus,
+  Star,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
@@ -63,19 +84,58 @@ const CURRENT_STEP = 1;
 export default function ProfileSetupPage() {
   const router = useRouter();
 
+  const [photos, setPhotos] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [nickname, setNickname] = useState('');
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [otherIdentity, setOtherIdentity] = useState('');
   const [goals, setGoals] = useState<RelationGoal[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<{
-    identity: Visibility;
     region: Visibility;
+    age: Visibility;
   }>({
-    identity: 'private',
     region: 'public',
+    age: 'public',
   });
   const [sensitiveAgreed, setSensitiveAgreed] = useState(false);
+
+  const MAX_PHOTOS = 6;
+
+  const handlePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    const newPhotos = Array.from(files)
+      .slice(0, remaining)
+      .map((file) => URL.createObjectURL(file));
+    setPhotos((prev) => [...prev, ...newPhotos]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setPhotos((prev) => {
+        const oldIndex = prev.indexOf(active.id as string);
+        const newIndex = prev.indexOf(over.id as string);
+        return arrayMove(prev, oldIndex, newIndex);
+      });
+    }
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
+  );
 
   const toggleGoal = (goal: RelationGoal) => {
     setGoals((prev) =>
@@ -85,7 +145,7 @@ export default function ProfileSetupPage() {
     );
   };
 
-  const toggleVisibility = (field: 'identity' | 'region') => {
+  const toggleVisibility = (field: 'region' | 'age') => {
     setVisibility((prev) => ({
       ...prev,
       [field]: prev[field] === 'public' ? 'private' : 'public',
@@ -154,6 +214,63 @@ export default function ProfileSetupPage() {
 
       {/* 스크롤 컨텐츠 */}
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-6 pb-4">
+        {/* 프로필 사진 */}
+        <section>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Camera size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              프로필 사진
+            </h2>
+          </div>
+          <p className="mb-4 text-xs text-cream/50">
+            최대 {MAX_PHOTOS}장까지 등록할 수 있어요 (선택)
+          </p>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoAdd}
+          />
+
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={photos}
+              strategy={rectSortingStrategy}
+            >
+              <div className="grid grid-cols-3 gap-2">
+                {photos.map((src, i) => (
+                  <SortablePhotoItem
+                    key={src}
+                    id={src}
+                    src={src}
+                    index={i}
+                    onRemove={() => handlePhotoRemove(i)}
+                  />
+                ))}
+
+                {photos.length < MAX_PHOTOS && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-cream/15 transition-colors hover:border-gold/30 hover:bg-cream/3"
+                  >
+                    <ImagePlus size={20} className="text-cream/25" />
+                    <span className="text-[10px] text-cream/25">
+                      {photos.length}/{MAX_PHOTOS}
+                    </span>
+                  </button>
+                )}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </section>
+
         {/* 닉네임 */}
         <section>
           <div className="mb-1 flex items-center gap-1.5">
@@ -286,24 +403,6 @@ export default function ProfileSetupPage() {
           </p>
           <div className="flex flex-col gap-3">
             <button
-              onClick={() => toggleVisibility('identity')}
-              className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
-            >
-              <span className="text-sm text-cream">정체성</span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs text-cream/50">
-                  {visibility.identity === 'public'
-                    ? '공개'
-                    : '비공개'}
-                </span>
-                {visibility.identity === 'public' ? (
-                  <Eye size={16} className="text-gold" />
-                ) : (
-                  <EyeOff size={16} className="text-gray" />
-                )}
-              </div>
-            </button>
-            <button
               onClick={() => toggleVisibility('region')}
               className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
             >
@@ -313,6 +412,22 @@ export default function ProfileSetupPage() {
                   {visibility.region === 'public' ? '공개' : '비공개'}
                 </span>
                 {visibility.region === 'public' ? (
+                  <Eye size={16} className="text-gold" />
+                ) : (
+                  <EyeOff size={16} className="text-gray" />
+                )}
+              </div>
+            </button>
+            <button
+              onClick={() => toggleVisibility('age')}
+              className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
+            >
+              <span className="text-sm text-cream">나이</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-cream/50">
+                  {visibility.age === 'public' ? '공개' : '비공개'}
+                </span>
+                {visibility.age === 'public' ? (
                   <Eye size={16} className="text-gold" />
                 ) : (
                   <EyeOff size={16} className="text-gray" />
@@ -356,6 +471,67 @@ export default function ProfileSetupPage() {
         </Button>
       </div>
     </main>
+  );
+}
+
+function SortablePhotoItem({
+  id,
+  src,
+  index,
+  onRemove,
+}: {
+  id: string;
+  src: string;
+  index: number;
+  onRemove: () => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : 0,
+    opacity: isDragging ? 0.7 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group relative aspect-square overflow-hidden rounded-xl border border-navy-light"
+      {...attributes}
+      {...listeners}
+    >
+      <Image
+        src={src}
+        alt={`사진 ${index + 1}`}
+        fill
+        className="object-cover"
+      />
+      {index === 0 && (
+        <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-navy">
+          <Star size={9} className="fill-navy" />
+          대표
+        </span>
+      )}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        onPointerDown={(e) => e.stopPropagation()}
+        className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-navy/70 text-cream/70 opacity-0 transition-opacity group-hover:opacity-100"
+      >
+        <X size={12} />
+      </button>
+    </div>
   );
 }
 
