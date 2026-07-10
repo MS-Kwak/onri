@@ -15,7 +15,7 @@ const tabs: TabItem[] = [
   { href: '/home', label: '홈', icon: Home },
   { href: '/signal', label: '시그널', icon: Heart },
   { href: '/chat', label: '채팅', icon: MessageCircle },
-  { href: '/my', label: 'MY', icon: User },
+  { href: '/my', label: '마이페이지', icon: User },
 ];
 
 export function BottomTab({ className }: { className?: string }) {

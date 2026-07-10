@@ -23,6 +23,7 @@ import {
   IDENTITY_LABELS,
   RELATION_GOAL_LABELS,
 } from '@/lib/constants';
+import { useHeartStore } from '@/store';
 import type { Identity, RelationGoal } from '@/types';
 
 const REGIONS = [
@@ -38,6 +39,7 @@ const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 
 export default function HomePage() {
   const router = useRouter();
+  const { balance } = useHeartStore();
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<
@@ -136,8 +138,17 @@ export default function HomePage() {
             </span>
           </div>
 
-          {/* 우측: 필터 + 프로필 */}
-          <div className="flex items-center gap-3">
+          {/* 우측: 하트 + 필터 + 프로필 */}
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => toast('하트 충전 (준비 중)')}
+              className="flex items-center gap-1 rounded-full bg-gold/10 px-2.5 py-1.5 transition-colors hover:bg-gold/15"
+            >
+              <Heart size={13} className="fill-gold text-gold" />
+              <span className="text-xs font-semibold text-gold">
+                {balance}
+              </span>
+            </button>
             <button
               onClick={() => setShowFilter(!showFilter)}
               className="relative rounded-lg p-2 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"

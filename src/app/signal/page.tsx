@@ -11,6 +11,7 @@ import {
   MessageCircle,
   Inbox,
   Send,
+  ArrowLeft,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
@@ -20,6 +21,7 @@ import {
   MOCK_RECEIVED_SIGNALS,
   MOCK_SENT_SIGNALS,
 } from '@/data/mock-signals';
+import { useHeartStore } from '@/store';
 import type { HeartSend, HeartSendStatus } from '@/types';
 
 type Tab = 'received' | 'sent';
@@ -53,6 +55,7 @@ const STATUS_CONFIG: Record<
 
 export default function SignalPage() {
   const router = useRouter();
+  const { balance } = useHeartStore();
   const [activeTab, setActiveTab] = useState<Tab>('received');
   const [receivedSignals, setReceivedSignals] = useState(
     MOCK_RECEIVED_SIGNALS,
@@ -106,9 +109,27 @@ export default function SignalPage() {
     <div className="flex min-h-dvh flex-col bg-navy pb-20">
       {/* 헤더 */}
       <header className="sticky top-0 z-40 bg-navy pt-12">
-        <div className="flex items-center gap-2 px-5 pb-3">
-          <Heart size={20} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">시그널</h1>
+        <div className="flex items-center justify-between px-5 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <Heart size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-cream">시그널</h1>
+          </div>
+
+          <button
+            onClick={() => toast('하트 충전 (준비 중)')}
+            className="flex items-center gap-1 rounded-full bg-gold/10 px-2.5 py-1.5 transition-colors hover:bg-gold/15"
+          >
+            <Heart size={13} className="fill-gold text-gold" />
+            <span className="text-xs font-semibold text-gold">
+              {balance}
+            </span>
+          </button>
         </div>
 
         {/* 탭 */}
