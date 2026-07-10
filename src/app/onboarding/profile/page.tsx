@@ -33,6 +33,7 @@ const CURRENT_STEP = 1;
 export default function ProfileSetupPage() {
   const router = useRouter();
 
+  const [nickname, setNickname] = useState('');
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [otherIdentity, setOtherIdentity] = useState('');
   const [goals, setGoals] = useState<RelationGoal[]>([]);
@@ -60,14 +61,19 @@ export default function ProfileSetupPage() {
     }));
   };
 
+  const nicknameValid =
+    nickname.trim().length >= 2 && nickname.trim().length <= 10;
   const identityValid =
     identity &&
     (identity !== 'OTHER' || otherIdentity.trim().length > 0);
   const canProceed =
-    identityValid && goals.length > 0 && sensitiveAgreed;
+    nicknameValid &&
+    identityValid &&
+    goals.length > 0 &&
+    sensitiveAgreed;
 
   const handleNext = () => {
-    router.push('/home');
+    router.push('/onboarding/complete');
   };
 
   return (
@@ -116,6 +122,27 @@ export default function ProfileSetupPage() {
 
       {/* 스크롤 컨텐츠 */}
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-6 pb-4">
+        {/* 닉네임 */}
+        <section>
+          <h2 className="mb-1 text-base font-semibold text-cream">
+            닉네임
+          </h2>
+          <p className="mb-4 text-xs text-cream/50">
+            온리에서 사용할 이름이에요 (2~10자)
+          </p>
+          <Input
+            placeholder="닉네임을 입력해주세요"
+            maxLength={10}
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            error={
+              nickname.length > 0 && nickname.trim().length < 2
+                ? '2자 이상 입력해주세요'
+                : undefined
+            }
+          />
+        </section>
+
         {/* 정체성 선택 */}
         <section>
           <h2 className="mb-1 text-base font-semibold text-cream">

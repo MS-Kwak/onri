@@ -13,6 +13,7 @@ export {
 export { ProfileCard } from './profile-card';
 export { BottomTab } from './bottom-tab';
 export { ChatBubble } from './chat-bubble';
+export { Avatar } from './avatar';
 
 export type {
   ButtonProps,
@@ -26,3 +27,4 @@ export type { SelectProps, SelectOption } from './select';
 export type { CheckboxProps } from './checkbox';
 export type { ProfileCardProps } from './profile-card';
 export type { ChatBubbleProps } from './chat-bubble';
+export type { AvatarProps } from './avatar';
