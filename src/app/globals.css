@@ -11,6 +11,7 @@
   --foreground-soft: #9a8560;
   --profile-grad-from: #d3c4a0;
   --profile-grad-to: #e8dcc8;
+  --card: #f0e6d2;
 
   --gold-v: #1c2233;
   --gold-soft-v: #2a3350;
@@ -31,6 +32,7 @@
   --foreground-soft: rgba(233, 228, 217, 0.4);
   --profile-grad-from: #2a3350;
   --profile-grad-to: #1c2233;
+  --card: #2a3350;
 
   --gold-v: #d3a859;
   --gold-soft-v: #b79a62;
@@ -51,6 +53,7 @@
   --color-foreground-soft: var(--foreground-soft);
   --color-profile-grad-from: var(--profile-grad-from);
   --color-profile-grad-to: var(--profile-grad-to);
+  --color-card: var(--card);
 
   --color-gold: var(--gold-v);
   --color-gold-soft: var(--gold-soft-v);

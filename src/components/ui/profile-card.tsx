@@ -28,7 +28,7 @@ export function ProfileCard({
     <div
       onClick={() => onPress?.(profile.id)}
       className={twMerge(
-        'relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface',
+        'relative flex flex-col overflow-hidden rounded-2xl border border-line bg-card',
 
         'shadow-sm transition-shadow hover:shadow-md',
         onPress && 'cursor-pointer',
@@ -45,7 +45,7 @@ export function ProfileCard({
             className="object-cover"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-card">
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background text-xl font-bold text-gold">
               {profile.nickname.charAt(0)}
             </div>
