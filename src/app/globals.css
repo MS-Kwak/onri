@@ -1,17 +1,43 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #F7F5F1;
-  --foreground: #222834;
+  --background: #f5f3ef;
+  --foreground: #1a1d25;
   --surface: #ffffff;
-  --surface-secondary: #F7F5F1;
+  --surface-secondary: #edeae4;
+  --line: #cbc5b8;
+  --muted: #b59b5e;
+  --foreground-dim: #c4a870;
+  --foreground-soft: #9a8560;
+  --profile-grad-from: #d3c4a0;
+  --profile-grad-to: #e8dcc8;
+
+  --gold-v: #1c2233;
+  --gold-soft-v: #2a3350;
+  --ink-v: #e9e4d9;
+  --cream-v: #222834;
+  --navy-v: #e8dcc8;
+  --navy-light-v: #d3a859;
 }
 
 .dark {
-  --background: #1C2233;
-  --foreground: #E9E4D9;
-  --surface: #2A3350;
-  --surface-secondary: #1C2233;
+  --background: #1c2233;
+  --foreground: #e9e4d9;
+  --surface: #2a3350;
+  --surface-secondary: #222a40;
+  --line: #2a3350;
+  --muted: #6b7280;
+  --foreground-dim: rgba(233, 228, 217, 0.2);
+  --foreground-soft: rgba(233, 228, 217, 0.4);
+  --profile-grad-from: #2a3350;
+  --profile-grad-to: #1c2233;
+
+  --gold-v: #d3a859;
+  --gold-soft-v: #b79a62;
+  --ink-v: #222834;
+  --cream-v: #e9e4d9;
+  --navy-v: #1c2233;
+  --navy-light-v: #2a3350;
 }
 
 @theme inline {
@@ -19,21 +45,28 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-secondary: var(--surface-secondary);
+  --color-line: var(--line);
+  --color-muted: var(--muted);
+  --color-foreground-dim: var(--foreground-dim);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-profile-grad-from: var(--profile-grad-from);
+  --color-profile-grad-to: var(--profile-grad-to);
 
-  --color-navy: #1C2233;
-  --color-navy-light: #2A3350;
-  --color-gold: #D3A859;
-  --color-gold-soft: #B79A62;
-  --color-cream: #E9E4D9;
-  --color-ink: #222834;
-  --color-gray: #6B7280;
-  --color-line: #D8D3C8;
-  --color-paper: #F7F5F1;
+  --color-gold: var(--gold-v);
+  --color-gold-soft: var(--gold-soft-v);
+  --color-ink: var(--ink-v);
+  --color-cream: var(--cream-v);
+  --color-navy: var(--navy-v);
+  --color-navy-light: var(--navy-light-v);
+  --color-gray: #6b7280;
+  --color-paper: #f7f5f1;
 
-  --font-sans: "Pretendard Variable", "Pretendard", -apple-system,
-    BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI",
-    "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji",
-    "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+  --font-sans:
+    'Pretendard Variable', 'Pretendard', -apple-system,
+    BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue',
+    'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
+    'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', sans-serif;
 }
 
 body {

@@ -11,24 +11,24 @@ export default function TermsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('terms');
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy">
-      <header className="sticky top-0 z-40 bg-navy">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center gap-2 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
           <FileText size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">
+          <h1 className="text-lg font-bold text-foreground">
             약관 및 정책
           </h1>
         </div>
 
         {/* 탭 */}
         <div className="px-5 pb-3">
-          <div className="relative flex rounded-xl bg-cream/5 p-1">
+          <div className="relative flex rounded-xl bg-surface-secondary p-1">
             <div
               className="absolute top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-gold/15 shadow-sm transition-transform duration-300 ease-out"
               style={{
@@ -41,7 +41,9 @@ export default function TermsPage() {
             <button
               onClick={() => setActiveTab('terms')}
               className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-colors ${
-                activeTab === 'terms' ? 'text-gold' : 'text-cream/35'
+                activeTab === 'terms'
+                  ? 'text-gold'
+                  : 'text-foreground/35'
               }`}
             >
               <FileText size={14} />
@@ -52,7 +54,7 @@ export default function TermsPage() {
               className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-medium transition-colors ${
                 activeTab === 'privacy'
                   ? 'text-gold'
-                  : 'text-cream/35'
+                  : 'text-foreground/35'
               }`}
             >
               <Shield size={14} />
@@ -60,7 +62,7 @@ export default function TermsPage() {
             </button>
           </div>
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <div className="flex-1 px-5 pt-5 pb-10">
@@ -76,7 +78,7 @@ export default function TermsPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-2 mt-6 text-sm font-bold text-cream first:mt-0">
+    <h2 className="mb-2 mt-6 text-sm font-bold text-foreground first:mt-0">
       {children}
     </h2>
   );
@@ -84,7 +86,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function Paragraph({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-3 text-xs leading-relaxed text-cream/50">
+    <p className="mb-3 text-xs leading-relaxed text-foreground/50">
       {children}
     </p>
   );
@@ -92,8 +94,8 @@ function Paragraph({ children }: { children: React.ReactNode }) {
 
 function ListItem({ children }: { children: React.ReactNode }) {
   return (
-    <li className="relative mb-1.5 pl-3 text-xs leading-relaxed text-cream/50">
-      <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-cream/20" />
+    <li className="relative mb-1.5 pl-3 text-xs leading-relaxed text-foreground/50">
+      <span className="absolute left-0 top-1.5 h-1 w-1 rounded-full bg-foreground/20" />
       {children}
     </li>
   );
@@ -102,7 +104,7 @@ function ListItem({ children }: { children: React.ReactNode }) {
 function TermsContent() {
   return (
     <article>
-      <p className="mb-4 text-[10px] text-cream/25">
+      <p className="mb-4 text-[10px] text-foreground-soft">
         시행일: 2026년 7월 1일 | 최종 수정: 2026년 7월 1일
       </p>
 
@@ -262,8 +264,8 @@ function TermsContent() {
         민사소송법에 따릅니다.
       </Paragraph>
 
-      <div className="mt-8 rounded-xl bg-cream/3 px-4 py-3">
-        <p className="text-[10px] text-cream/20">
+      <div className="mt-8 rounded-xl bg-surface-secondary px-4 py-3">
+        <p className="text-[10px] text-foreground-dim">
           본 약관에 대한 문의는 고객센터를 통해 접수해주세요.
           <br />
           시행일: 2026년 7월 1일
@@ -276,7 +278,7 @@ function TermsContent() {
 function PrivacyContent() {
   return (
     <article>
-      <p className="mb-4 text-[10px] text-cream/25">
+      <p className="mb-4 text-[10px] text-foreground-soft">
         시행일: 2026년 7월 1일 | 최종 수정: 2026년 7월 1일
       </p>
 
@@ -452,8 +454,8 @@ function PrivacyContent() {
         </ListItem>
       </ul>
 
-      <div className="mt-8 rounded-xl bg-cream/3 px-4 py-3">
-        <p className="text-[10px] text-cream/20">
+      <div className="mt-8 rounded-xl bg-surface-secondary px-4 py-3">
+        <p className="text-[10px] text-foreground-dim">
           본 방침에 대한 문의는 고객센터를 통해 접수해주세요.
           <br />
           시행일: 2026년 7월 1일

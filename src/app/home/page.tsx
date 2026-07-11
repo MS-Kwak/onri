@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Avatar } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useTheme } from '@/components/theme-provider';
 import { toast } from 'sonner';
 import { Pill } from '@/components/ui/pill';
 import { ProfileCard } from '@/components/ui/profile-card';
@@ -40,6 +42,12 @@ const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 export default function HomePage() {
   const router = useRouter();
   const { balance } = useHeartStore();
+  const { theme } = useTheme();
+  const isDark =
+    theme === 'dark' ||
+    (theme === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<
@@ -121,24 +129,28 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy pb-20">
+    <div className="flex min-h-dvh flex-col bg-background pb-20">
       {/* 상단 헤더 */}
-      <header className="sticky top-0 z-40 bg-navy">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center justify-between px-5 pt-12 pb-3">
           {/* 로고 */}
           <div className="flex items-center gap-2">
             <Image
-              src="/onri-symbol-gold.svg"
+              src={
+                isDark
+                  ? '/onri-symbol-gold.svg'
+                  : '/onri-symbol-navy.svg'
+              }
               alt="온리"
               width={28}
               height={28}
             />
-            <span className="text-base font-semibold tracking-wide text-cream">
+            <span className="text-base font-semibold tracking-wide text-foreground">
               온리
             </span>
           </div>
 
-          {/* 우측: 하트 + 필터 + 프로필 */}
+          {/* 우측: 하트 + 필터 + 프로필 + 테마 */}
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => router.push('/my/hearts')}
@@ -151,11 +163,11 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => setShowFilter(!showFilter)}
-              className="relative rounded-lg p-2 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+              className="relative rounded-lg p-2 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
             >
               <SlidersHorizontal size={20} />
               {activeFilterCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-navy">
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-bold text-ink">
                   {activeFilterCount}
                 </span>
               )}
@@ -170,21 +182,22 @@ export default function HomePage() {
                 size="sm"
                 className=""
               />
-              <span className="text-sm font-medium text-cream/80">
+              <span className="text-sm font-medium text-foreground/80">
                 {MOCK_CURRENT_USER.nickname}
               </span>
             </button>
+            <ThemeToggle />
           </div>
         </div>
 
         {/* 필터 패널 */}
         {showFilter && (
-          <div className="border-t border-navy-light py-3">
+          <div className="border-t border-line py-3">
             {activeFilterCount > 0 && (
               <div className="flex justify-end px-5 pb-2">
                 <button
                   onClick={clearFilters}
-                  className="flex items-center gap-1 rounded-full bg-cream/5 px-3 py-1 text-xs text-cream/50 transition-colors hover:bg-cream/10 hover:text-cream"
+                  className="flex items-center gap-1 rounded-full bg-foreground/5 px-3 py-1 text-xs text-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
                 >
                   <RotateCcw size={11} />
                   초기화
@@ -315,7 +328,7 @@ export default function HomePage() {
           </div>
         )}
 
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       {/* 프로필 카드 그리드 */}
@@ -333,18 +346,18 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 pt-24">
-            <Search size={40} className="text-cream/20" />
+            <Search size={40} className="text-foreground-dim" />
             <div className="text-center">
-              <p className="text-sm font-medium text-cream/60">
+              <p className="text-sm font-medium text-foreground/60">
                 조건에 맞는 프로필이 없어요
               </p>
-              <p className="mt-1 text-xs text-cream/40">
+              <p className="mt-1 text-xs text-foreground/40">
                 필터를 완화해보세요
               </p>
             </div>
             <button
               onClick={clearFilters}
-              className="mt-2 rounded-xl bg-navy-light px-5 py-2.5 text-sm text-gold transition-colors hover:bg-navy-light/80"
+              className="mt-2 rounded-xl bg-surface px-5 py-2.5 text-sm text-gold transition-colors hover:bg-surface/80"
             >
               필터 초기화
             </button>
@@ -373,7 +386,7 @@ function FilterCarousel({
 
   return (
     <div className="mb-2">
-      <span className="mb-1.5 block px-5 text-xs font-medium text-cream/50">
+      <span className="mb-1.5 block px-5 text-xs font-medium text-foreground/50">
         {label}
       </span>
       <div className="overflow-hidden" ref={emblaRef}>

@@ -31,7 +31,7 @@ export function Select({
   return (
     <div className="flex flex-col gap-1.5">
       {label && (
-        <label className="text-xs font-medium text-cream/70">
+        <label className="text-xs font-medium text-foreground/70">
           {label}
         </label>
       )}
@@ -41,7 +41,7 @@ export function Select({
       >
         <SelectPrimitive.Trigger
           className={twMerge(
-            'flex w-full items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none transition-colors',
+            'flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none transition-colors',
             'data-placeholder:text-gray hover:border-gold-soft/50 focus:border-gold-soft',
             error && 'border-rose-500/70 focus:border-rose-500',
             className,
@@ -55,7 +55,7 @@ export function Select({
 
         <SelectPrimitive.Portal>
           <SelectPrimitive.Content
-            className="z-50 overflow-hidden rounded-xl border border-navy-light bg-navy-light shadow-xl"
+            className="z-50 overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
             position="popper"
             sideOffset={4}
           >
@@ -64,7 +64,7 @@ export function Select({
                 <SelectPrimitive.Item
                   key={opt.value}
                   value={opt.value}
-                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-cream outline-none transition-colors data-highlighted:bg-gold/10 data-highlighted:text-gold"
+                  className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground outline-none transition-colors data-highlighted:bg-gold/10 data-highlighted:text-gold"
                 >
                   <SelectPrimitive.ItemText>
                     {opt.label}

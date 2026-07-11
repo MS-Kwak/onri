@@ -29,14 +29,14 @@ export function ProfileCard({
       onClick={() => onPress?.(profile.id)}
       className={twMerge(
         'relative flex flex-col overflow-hidden rounded-2xl border border-line bg-surface',
-        'dark:border-navy-light dark:bg-navy-light',
+
         'shadow-sm transition-shadow hover:shadow-md',
         onPress && 'cursor-pointer',
         className,
       )}
     >
       {/* 썸네일 영역 */}
-      <div className="relative aspect-square w-full overflow-hidden bg-line dark:bg-navy">
+      <div className="relative aspect-square w-full overflow-hidden bg-line">
         {profile.thumbnailUrl ? (
           <Image
             src={profile.thumbnailUrl}
@@ -45,14 +45,14 @@ export function ProfileCard({
             className="object-cover"
           />
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-navy-light">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-navy text-xl font-bold text-gold">
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-surface">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background text-xl font-bold text-gold">
               {profile.nickname.charAt(0)}
             </div>
           </div>
         )}
         {profile.verificationStatus === 'approved' && (
-          <span className="absolute top-2 left-2 rounded-full bg-gold px-2 py-0.5 text-xs font-medium text-navy">
+          <span className="absolute top-2 left-2 rounded-full bg-gold px-2 py-0.5 text-xs font-medium text-ink">
             셀카 인증
           </span>
         )}
@@ -92,14 +92,16 @@ export function ProfileCard({
             {IDENTITY_LABELS[profile.identity]}
           </span>
           {profile.lookingFor.length > 0 && (
-            <span className="text-[10px] text-cream/20">|</span>
+            <span className="text-[10px] text-foreground-dim">|</span>
           )}
           {profile.lookingFor.slice(0, 2).map((goal, i) => (
             <span key={goal} className="flex items-center gap-1.5">
               {i > 0 && (
-                <span className="text-[10px] text-cream/15">·</span>
+                <span className="text-[10px] text-foreground-dim">
+                  ·
+                </span>
               )}
-              <span className="text-[11px] text-cream/50">
+              <span className="text-[11px] text-foreground/50">
                 {RELATION_GOAL_LABELS[goal]}
               </span>
             </span>

@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 
 export default function OnboardingPage() {
   const router = useRouter();
 
   const handleKakaoLogin = () => {
-    router.push("/auth/verify");
+    router.push('/auth/verify');
   };
 
   const handleAppleLogin = () => {
-    router.push("/auth/verify");
+    router.push('/auth/verify');
   };
 
   const handleEmailLogin = () => {
-    router.push("/auth/verify");
+    router.push('/auth/verify');
   };
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-between bg-navy px-6 py-12">
+    <main className="flex min-h-dvh flex-col items-center justify-between bg-background px-6 py-12">
       {/* 상단 여백 + 로고 영역 */}
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <Image
@@ -31,9 +31,13 @@ export default function OnboardingPage() {
           priority
         />
         <div className="flex flex-col items-center gap-4">
-          <p className="text-sm text-cream/50">온전한 나로 쉬어가는 곳</p>
-          <div className="h-px w-12 bg-cream/20" />
-          <span className="text-lg font-light tracking-widest text-cream">온리</span>
+          <p className="text-sm text-foreground/50">
+            온전한 나로 쉬어가는 곳
+          </p>
+          <div className="h-px w-12 bg-foreground/20" />
+          <span className="text-lg font-light tracking-widest text-foreground">
+            온리
+          </span>
         </div>
       </div>
 
@@ -41,7 +45,7 @@ export default function OnboardingPage() {
       <div className="flex w-full max-w-sm flex-col gap-3">
         <button
           onClick={handleKakaoLogin}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-base font-semibold text-navy transition-colors hover:bg-gold-soft active:bg-gold-soft"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-base font-semibold text-ink transition-colors hover:bg-gold-soft active:bg-gold-soft"
         >
           카카오로 시작하기
         </button>
@@ -55,7 +59,7 @@ export default function OnboardingPage() {
 
         <button
           onClick={handleEmailLogin}
-          className="w-full py-3 text-center text-sm text-gray transition-colors hover:text-cream"
+          className="w-full py-3 text-center text-sm text-gray transition-colors hover:text-foreground"
         >
           이메일로 로그인
         </button>

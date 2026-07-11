@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, use } from 'react';
+import { useState, useRef, useEffect, useMemo, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -18,6 +18,9 @@ import {
   MessageSquareWarning,
   CircleAlert,
   FileWarning,
+  Search,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
@@ -110,6 +113,35 @@ export default function ChatRoomPage({
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetail, setReportDetail] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchIndex, setSearchIndex] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const searchResults = useMemo(
+    () =>
+      searchQuery.trim()
+        ? messages
+            .map((m, i) => ({ msg: m, idx: i }))
+            .filter(({ msg }) =>
+              msg.text
+                .toLowerCase()
+                .includes(searchQuery.trim().toLowerCase()),
+            )
+        : [],
+    [searchQuery, messages],
+  );
+
+  const scrollToMessage = (msgIdx: number) => {
+    const el = document.getElementById(`msg-${msgIdx}`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  useEffect(() => {
+    if (searchResults.length > 0 && searchResults[searchIndex]) {
+      scrollToMessage(searchResults[searchIndex].idx);
+    }
+  }, [searchIndex, searchResults]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -156,21 +188,21 @@ export default function ChatRoomPage({
 
   if (!room || !partner) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-navy">
-        <p className="text-cream/50">채팅방을 찾을 수 없어요</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <p className="text-foreground/50">채팅방을 찾을 수 없어요</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-dvh flex-col bg-navy">
+    <div className="flex h-dvh flex-col bg-background">
       {/* 상단 바 */}
-      <header className="sticky top-0 z-40 bg-navy">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center justify-between px-4 pt-12 pb-3">
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/chat')}
-              className="rounded-full p-1 text-cream/60 transition-colors hover:text-cream"
+              className="rounded-full p-1 text-foreground/60 transition-colors hover:text-foreground"
             >
               <ArrowLeft size={20} />
             </button>
@@ -185,17 +217,17 @@ export default function ChatRoomPage({
                   size="sm"
                 />
                 {partner.verificationStatus === 'approved' && (
-                  <div className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-navy">
+                  <div className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background">
                     <ShieldCheck size={9} className="text-gold" />
                   </div>
                 )}
               </div>
               <div>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-semibold text-cream">
+                  <span className="text-sm font-semibold text-foreground">
                     {partner.nickname}
                   </span>
-                  <span className="text-[11px] text-cream/30">
+                  <span className="text-[11px] text-foreground-soft">
                     {partner.age}세
                   </span>
                 </div>
@@ -203,46 +235,119 @@ export default function ChatRoomPage({
             </button>
           </div>
 
-          {/* 더보기 메뉴 */}
-          <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
-            <Dialog.Trigger asChild>
-              <button className="rounded-full p-1.5 text-cream/50 transition-colors hover:bg-cream/5 hover:text-cream">
-                <MoreVertical size={18} />
-              </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-              <Dialog.Content className="fixed right-4 top-24 z-50 w-52 overflow-hidden rounded-2xl border border-navy-light bg-navy-light shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
-                <Dialog.Title className="sr-only">메뉴</Dialog.Title>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setReportOpen(true);
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-cream/70 transition-colors hover:bg-cream/5 hover:text-cream"
-                >
-                  <Flag size={15} className="text-gold/60" />
-                  신고하기
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => {
+                setSearchOpen(!searchOpen);
+                if (searchOpen) {
+                  setSearchQuery('');
+                  setSearchIndex(0);
+                }
+              }}
+              className={`rounded-full p-1.5 transition-colors ${searchOpen ? 'bg-gold/10 text-gold' : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground'}`}
+            >
+              <Search size={16} />
+            </button>
+
+            {/* 더보기 메뉴 */}
+            <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
+              <Dialog.Trigger asChild>
+                <button className="rounded-full p-1.5 text-foreground/50 transition-colors hover:bg-foreground/5 hover:text-foreground">
+                  <MoreVertical size={18} />
                 </button>
-                <div className="h-px bg-cream/5" />
-                <button
-                  onClick={handleBlock}
-                  className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-400 transition-colors hover:bg-red-500/5"
-                >
-                  <Ban size={15} />
-                  차단하기
-                </button>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+                <Dialog.Content className="fixed right-4 top-24 z-50 w-52 overflow-hidden rounded-2xl border border-line bg-surface shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+                  <Dialog.Title className="sr-only">
+                    메뉴
+                  </Dialog.Title>
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setReportOpen(true);
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  >
+                    <Flag size={15} className="text-gold/60" />
+                    신고하기
+                  </button>
+                  <div className="h-px bg-foreground/5" />
+                  <button
+                    onClick={handleBlock}
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-400 transition-colors hover:bg-red-500/5"
+                  >
+                    <Ban size={15} />
+                    차단하기
+                  </button>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
+          </div>
         </div>
-        <div className="h-px bg-navy-light" />
+
+        {/* 메시지 검색 바 */}
+        {searchOpen && (
+          <div className="flex items-center gap-2 px-4 pb-3">
+            <div className="flex flex-1 items-center gap-2.5 rounded-xl bg-surface px-3.5 py-2">
+              <Search
+                size={14}
+                className="shrink-0 text-foreground-soft"
+              />
+              <input
+                ref={searchInputRef}
+                autoFocus
+                type="text"
+                placeholder="메시지 검색"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchIndex(0);
+                }}
+                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-soft focus:outline-none"
+              />
+              {searchQuery && (
+                <span className="shrink-0 text-[11px] text-foreground-soft">
+                  {searchResults.length > 0
+                    ? `${searchIndex + 1}/${searchResults.length}`
+                    : '0건'}
+                </span>
+              )}
+            </div>
+            {searchResults.length > 1 && (
+              <div className="flex gap-0.5">
+                <button
+                  onClick={() =>
+                    setSearchIndex((prev) =>
+                      prev > 0 ? prev - 1 : searchResults.length - 1,
+                    )
+                  }
+                  className="rounded-lg p-1.5 text-foreground/40 hover:text-foreground"
+                >
+                  <ChevronUp size={16} />
+                </button>
+                <button
+                  onClick={() =>
+                    setSearchIndex((prev) =>
+                      prev < searchResults.length - 1 ? prev + 1 : 0,
+                    )
+                  }
+                  className="rounded-lg p-1.5 text-foreground/40 hover:text-foreground"
+                >
+                  <ChevronDown size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="h-px bg-line" />
       </header>
 
       {/* 안전 배너 */}
       <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-gold/5 px-3.5 py-2.5">
         <ShieldCheck size={14} className="shrink-0 text-gold/60" />
-        <p className="text-[11px] text-cream/35">
+        <p className="text-[11px] text-foreground/35">
           안전하게 대화하세요 · 개인정보 공유에 주의하세요
         </p>
       </div>
@@ -269,10 +374,10 @@ export default function ChatRoomPage({
                 5 * 60 * 1000;
 
             return (
-              <div key={msg.id}>
+              <div key={msg.id} id={`msg-${idx}`}>
                 {showDate && (
                   <div className="flex justify-center py-4">
-                    <span className="rounded-full bg-cream/5 px-3.5 py-1 text-[11px] text-cream/30">
+                    <span className="rounded-full bg-foreground/5 px-3.5 py-1 text-[11px] text-foreground-soft">
                       {formatDateSeparator(msg.createdAt)}
                     </span>
                   </div>
@@ -298,11 +403,11 @@ export default function ChatRoomPage({
                     className={`flex max-w-[70%] items-end gap-1.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                   >
                     <div
-                      className={`rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed ${
+                      className={`rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed transition-all ${
                         isMine
-                          ? 'rounded-br-md bg-gold text-navy'
-                          : 'rounded-bl-md bg-navy-light text-cream'
-                      }`}
+                          ? 'rounded-br-md bg-gold text-ink'
+                          : 'rounded-bl-md bg-surface text-foreground'
+                      } ${searchResults.some((r) => r.idx === idx) ? 'ring-2 ring-gold/60' : ''} ${searchResults[searchIndex]?.idx === idx ? 'ring-2 ring-gold scale-[1.02]' : ''}`}
                     >
                       {msg.text}
                     </div>
@@ -312,7 +417,7 @@ export default function ChatRoomPage({
                         className={`flex shrink-0 flex-col gap-0.5 pb-0.5 ${isMine ? 'items-end' : 'items-start'}`}
                       >
                         {isMine && (
-                          <span className="text-[10px] text-cream/25">
+                          <span className="text-[10px] text-foreground-soft">
                             {msg.readAt ? (
                               <CheckCheck
                                 size={12}
@@ -321,12 +426,12 @@ export default function ChatRoomPage({
                             ) : (
                               <Check
                                 size={12}
-                                className="text-cream/20"
+                                className="text-foreground-dim"
                               />
                             )}
                           </span>
                         )}
-                        <span className="text-[10px] text-cream/20">
+                        <span className="text-[10px] text-foreground-dim">
                           {formatMessageTime(msg.createdAt)}
                         </span>
                       </div>
@@ -340,9 +445,9 @@ export default function ChatRoomPage({
       </div>
 
       {/* 입력 영역 */}
-      <div className="border-t border-navy-light bg-navy px-4 pt-3 pb-8">
+      <div className="border-t border-line bg-background px-4 pt-3 pb-8">
         <div className="flex items-end gap-2">
-          <div className="flex-1 rounded-2xl bg-navy-light">
+          <div className="flex-1 rounded-2xl bg-surface">
             <textarea
               ref={inputRef}
               value={inputText}
@@ -359,13 +464,13 @@ export default function ChatRoomPage({
               }}
               placeholder="메시지를 입력하세요..."
               rows={1}
-              className="max-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-cream placeholder:text-cream/25 focus:outline-none"
+              className="max-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:outline-none"
             />
           </div>
           <button
             onClick={handleSend}
             disabled={!inputText.trim()}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-navy transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
           >
             <Send size={18} />
           </button>
@@ -376,13 +481,13 @@ export default function ChatRoomPage({
       <Dialog.Root open={reportOpen} onOpenChange={setReportOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-          <Dialog.Content className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-md rounded-t-3xl border border-navy-light bg-navy p-6 pb-10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom">
+          <Dialog.Content className="fixed inset-x-4 bottom-0 z-50 mx-auto max-w-md rounded-t-3xl border border-line bg-background p-6 pb-10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom">
             <div className="mb-5 flex items-center justify-between">
-              <Dialog.Title className="flex items-center gap-2 text-base font-bold text-cream">
+              <Dialog.Title className="flex items-center gap-2 text-base font-bold text-foreground">
                 <Flag size={16} className="text-gold" />
                 {partner.nickname}님 신고
               </Dialog.Title>
-              <Dialog.Close className="rounded-full p-1 text-cream/40 transition-colors hover:text-cream">
+              <Dialog.Close className="rounded-full p-1 text-foreground/40 transition-colors hover:text-foreground">
                 <X size={18} />
               </Dialog.Close>
             </div>
@@ -395,7 +500,7 @@ export default function ChatRoomPage({
                   className={`flex items-center gap-2.5 rounded-xl px-4 py-3 text-left text-sm transition-colors ${
                     reportReason === id
                       ? 'border border-gold/30 bg-gold/10 text-gold'
-                      : 'border border-transparent bg-navy-light text-cream/60 hover:bg-cream/5'
+                      : 'border border-transparent bg-surface text-foreground/60 hover:bg-foreground/5'
                   }`}
                 >
                   <Icon size={14} />
@@ -410,7 +515,7 @@ export default function ChatRoomPage({
                 value={reportDetail}
                 onChange={(e) => setReportDetail(e.target.value)}
                 rows={3}
-                className="mb-4 w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+                className="mb-4 w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none"
               />
             )}
 

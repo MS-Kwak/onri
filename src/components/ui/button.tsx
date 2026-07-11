@@ -12,7 +12,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-gold text-navy font-semibold hover:bg-gold-soft active:bg-gold-soft',
+    'bg-gold text-ink font-semibold hover:bg-gold-soft active:bg-gold-soft',
   secondary:
     'bg-cream text-ink font-medium hover:bg-line active:bg-line',
   outline:

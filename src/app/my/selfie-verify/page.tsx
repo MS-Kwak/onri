@@ -54,21 +54,21 @@ export default function SelfieVerifyPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy">
+    <div className="flex min-h-dvh flex-col bg-background">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-navy">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center gap-3 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-cream">
+          <h1 className="text-lg font-semibold text-foreground">
             셀카 인증
           </h1>
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <input
@@ -90,10 +90,10 @@ export default function SelfieVerifyPage() {
               </div>
 
               <div className="text-center">
-                <h2 className="text-xl font-bold text-cream">
+                <h2 className="text-xl font-bold text-foreground">
                   셀카로 나를 인증해요
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-cream/50">
+                <p className="mt-2 text-sm leading-relaxed text-foreground/50">
                   프로필 사진과 실제 얼굴이 같은지 확인해요.
                   <br />
                   인증이 완료되면 프로필에 뱃지가 표시됩니다.
@@ -137,10 +137,10 @@ export default function SelfieVerifyPage() {
         {/* ② 촬영 (파일 선택 후 자동으로 ③으로 이동) */}
         {step === 'capture' && (
           <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
-            <div className="flex h-48 w-48 items-center justify-center rounded-full border-2 border-dashed border-gold/30 bg-cream/3">
-              <Camera size={48} className="text-cream/20" />
+            <div className="flex h-48 w-48 items-center justify-center rounded-full border-2 border-dashed border-gold/30 bg-surface-secondary">
+              <Camera size={48} className="text-foreground-dim" />
             </div>
-            <p className="text-sm text-cream/40">
+            <p className="text-sm text-foreground/40">
               카메라가 열리지 않았나요?
             </p>
             <Button
@@ -166,10 +166,10 @@ export default function SelfieVerifyPage() {
               </div>
 
               <div className="text-center">
-                <h2 className="text-lg font-bold text-cream">
+                <h2 className="text-lg font-bold text-foreground">
                   이 사진으로 인증할까요?
                 </h2>
-                <p className="mt-1 text-xs text-cream/40">
+                <p className="mt-1 text-xs text-foreground/40">
                   얼굴이 잘 보이는지 확인해주세요
                 </p>
               </div>
@@ -178,14 +178,14 @@ export default function SelfieVerifyPage() {
             <div className="flex gap-3">
               <button
                 onClick={handleRetake}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-cream/10 py-3.5 text-sm font-medium text-cream/60 transition-colors hover:bg-cream/5"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl border border-line py-3.5 text-sm font-medium text-foreground/60 transition-colors hover:bg-foreground/5"
               >
                 <RefreshCw size={16} />
                 다시 촬영
               </button>
               <button
                 onClick={handleSubmit}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-gold py-3.5 text-sm font-semibold text-navy transition-colors hover:bg-gold/90 active:scale-[0.98]"
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-2xl bg-gold py-3.5 text-sm font-semibold text-ink transition-colors hover:bg-gold/90 active:scale-[0.98]"
               >
                 <Check size={16} />
                 인증하기
@@ -201,10 +201,10 @@ export default function SelfieVerifyPage() {
               <Loader2 size={32} className="animate-spin text-gold" />
             </div>
             <div className="text-center">
-              <h2 className="text-lg font-bold text-cream">
+              <h2 className="text-lg font-bold text-foreground">
                 검토 중이에요
               </h2>
-              <p className="mt-1 text-sm text-cream/40">
+              <p className="mt-1 text-sm text-foreground/40">
                 잠시만 기다려주세요...
               </p>
             </div>
@@ -220,19 +220,19 @@ export default function SelfieVerifyPage() {
               </div>
 
               <div className="text-center">
-                <h2 className="text-xl font-bold text-cream">
+                <h2 className="text-xl font-bold text-foreground">
                   인증 요청이 접수되었어요
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-cream/50">
+                <p className="mt-2 text-sm leading-relaxed text-foreground/50">
                   관리자가 프로필 사진과 셀카를 비교해서
                   <br />
                   확인할 예정이에요. 보통 24시간 이내 완료돼요.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl bg-cream/5 px-4 py-2.5">
-                <Clock size={14} className="text-cream/40" />
-                <span className="text-xs text-cream/50">
+              <div className="flex items-center gap-2 rounded-xl bg-foreground/5 px-4 py-2.5">
+                <Clock size={14} className="text-foreground/40" />
+                <span className="text-xs text-foreground/50">
                   검토까지 약 24시간 소요
                 </span>
               </div>
@@ -263,11 +263,13 @@ function GuideItem({
   desc: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-xl bg-cream/3 px-4 py-3">
+    <div className="flex items-start gap-3 rounded-xl bg-surface-secondary px-4 py-3">
       <span className="mt-0.5 text-gold/60">{icon}</span>
       <div>
-        <p className="text-sm font-medium text-cream/80">{title}</p>
-        <p className="mt-0.5 text-xs text-cream/35">{desc}</p>
+        <p className="text-sm font-medium text-foreground/80">
+          {title}
+        </p>
+        <p className="mt-0.5 text-xs text-foreground/35">{desc}</p>
       </div>
     </div>
   );

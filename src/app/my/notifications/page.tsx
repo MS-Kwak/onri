@@ -56,7 +56,7 @@ export default function NotificationsPage() {
     },
     {
       id: 'marketing',
-      icon: <Megaphone size={17} className="text-cream/40" />,
+      icon: <Megaphone size={17} className="text-foreground/40" />,
       label: '이벤트·혜택 알림',
       desc: '할인, 이벤트 등 유용한 정보를 알려드려요',
       enabled: false,
@@ -78,34 +78,36 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy">
-      <header className="sticky top-0 z-40 bg-navy">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center gap-2 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
           <Bell size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">알림 설정</h1>
+          <h1 className="text-lg font-bold text-foreground">
+            알림 설정
+          </h1>
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <div className="flex flex-col gap-2 px-5 pt-5 pb-10">
         {settings.map((setting) => (
           <div
             key={setting.id}
-            className="flex items-center justify-between rounded-2xl bg-cream/3 px-4 py-4"
+            className="flex items-center justify-between rounded-2xl bg-surface-secondary px-4 py-4"
           >
             <div className="flex items-start gap-3">
               <span className="mt-0.5">{setting.icon}</span>
               <div>
-                <p className="text-sm font-medium text-cream">
+                <p className="text-sm font-medium text-foreground">
                   {setting.label}
                 </p>
-                <p className="mt-0.5 text-[11px] text-cream/35">
+                <p className="mt-0.5 text-[11px] text-foreground/35">
                   {setting.desc}
                 </p>
               </div>
@@ -114,7 +116,7 @@ export default function NotificationsPage() {
             <Switch.Root
               checked={setting.enabled}
               onCheckedChange={() => toggleSetting(setting.id)}
-              className="relative h-7 w-12 shrink-0 cursor-pointer rounded-full bg-cream/10 transition-colors data-[state=checked]:bg-gold"
+              className="relative h-7 w-12 shrink-0 cursor-pointer rounded-full bg-foreground/10 transition-colors data-[state=checked]:bg-gold"
             >
               <Switch.Thumb className="block h-5 w-5 translate-x-1 rounded-full bg-white shadow-sm transition-transform duration-200 data-[state=checked]:translate-x-[22px]" />
             </Switch.Root>

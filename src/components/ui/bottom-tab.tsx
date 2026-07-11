@@ -44,8 +44,7 @@ export function BottomTab({ className }: { className?: string }) {
     <nav
       className={twMerge(
         'fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around',
-        'border-t border-line bg-surface pb-[env(safe-area-inset-bottom)]',
-        'dark:border-navy-light dark:bg-navy',
+        'border-t border-line bg-background pb-[env(safe-area-inset-bottom)]',
         'h-16',
         className,
       )}

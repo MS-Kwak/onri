@@ -230,17 +230,17 @@ export default function ProfileSetupPage() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col bg-navy">
+    <main className="flex min-h-dvh flex-col bg-background">
       {/* 고정 헤더 + 프로그레스 */}
-      <div className="sticky top-0 z-40 bg-navy">
+      <div className="sticky top-0 z-40 bg-background">
         <header className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-cream">
+          <h1 className="text-lg font-semibold text-foreground">
             프로필 설정
           </h1>
         </header>
@@ -255,12 +255,14 @@ export default function ProfileSetupPage() {
               >
                 <div
                   className={`h-1 w-full rounded-full ${
-                    i <= CURRENT_STEP ? 'bg-gold' : 'bg-navy-light'
+                    i <= CURRENT_STEP ? 'bg-gold' : 'bg-surface'
                   }`}
                 />
                 <span
                   className={`text-[10px] ${
-                    i <= CURRENT_STEP ? 'text-gold' : 'text-cream/30'
+                    i <= CURRENT_STEP
+                      ? 'text-gold'
+                      : 'text-foreground-soft'
                   }`}
                 >
                   {step.label}
@@ -270,7 +272,7 @@ export default function ProfileSetupPage() {
           </div>
         </div>
 
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </div>
 
       {/* 스크롤 컨텐츠 */}
@@ -279,11 +281,11 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <Camera size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               프로필 사진
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             최소 1장 필수 · 최대 {MAX_PHOTOS}장까지 등록할 수 있어요
           </p>
 
@@ -319,10 +321,13 @@ export default function ProfileSetupPage() {
                 {photos.length < MAX_PHOTOS && (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-cream/15 transition-colors hover:border-gold/30 hover:bg-cream/3"
+                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line transition-colors hover:border-gold/30 hover:bg-foreground/8"
                   >
-                    <ImagePlus size={20} className="text-cream/25" />
-                    <span className="text-[10px] text-cream/25">
+                    <ImagePlus
+                      size={20}
+                      className="text-foreground-soft"
+                    />
+                    <span className="text-[10px] text-foreground-soft">
                       {photos.length}/{MAX_PHOTOS}
                     </span>
                   </button>
@@ -336,11 +341,11 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <UserRound size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               닉네임
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             온리에서 사용할 이름이에요 (2~10자)
           </p>
           <Input
@@ -360,11 +365,11 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <MessageSquareText size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               자기소개
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             나를 소개하는 한 줄 (선택)
           </p>
           <div className="relative">
@@ -374,9 +379,9 @@ export default function ProfileSetupPage() {
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
-              className="w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+              className="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none"
             />
-            <span className="absolute right-3 bottom-2 text-[10px] text-cream/30">
+            <span className="absolute right-3 bottom-2 text-[10px] text-foreground-soft">
               {bio.length}/100
             </span>
           </div>
@@ -386,16 +391,16 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <Ruler size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               신체 정보
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             선택 사항이에요 · 비공개 가능
           </p>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-cream/40">
+              <label className="mb-1.5 block text-xs text-foreground/40">
                 키
               </label>
               <div className="relative">
@@ -404,15 +409,15 @@ export default function ProfileSetupPage() {
                   placeholder="-"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-12 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full appearance-none rounded-xl border border-line bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/40">
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-foreground/40">
                   cm
                 </span>
               </div>
             </div>
             <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-cream/40">
+              <label className="mb-1.5 block text-xs text-foreground/40">
                 몸무게
               </label>
               <div className="relative">
@@ -421,9 +426,9 @@ export default function ProfileSetupPage() {
                   placeholder="-"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  className="w-full appearance-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-12 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full appearance-none rounded-xl border border-line bg-surface px-4 py-3 pr-12 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/40">
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-foreground/40">
                   kg
                 </span>
               </div>
@@ -435,11 +440,11 @@ export default function ProfileSetupPage() {
         <section className="-mx-6">
           <div className="mb-1 flex items-center gap-1.5 px-6">
             <Sparkles size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               나를 어떻게 표현할까요?
             </h2>
           </div>
-          <p className="mb-4 px-6 text-xs text-cream/50">
+          <p className="mb-4 px-6 text-xs text-foreground/50">
             하나를 선택해주세요
           </p>
           <PillCarousel>
@@ -476,11 +481,11 @@ export default function ProfileSetupPage() {
         <section className="-mx-6">
           <div className="mb-1 flex items-center gap-1.5 px-6">
             <HeartHandshake size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               무엇을 찾고 있나요?
             </h2>
           </div>
-          <p className="mb-4 px-6 text-xs text-cream/50">
+          <p className="mb-4 px-6 text-xs text-foreground/50">
             복수 선택 가능
           </p>
           <PillCarousel>
@@ -500,11 +505,11 @@ export default function ProfileSetupPage() {
         <section className="-mx-6">
           <div className="mb-1 flex items-center gap-1.5 px-6">
             <MapPin size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               지역
             </h2>
           </div>
-          <p className="mb-4 px-6 text-xs text-cream/50">
+          <p className="mb-4 px-6 text-xs text-foreground/50">
             활동하는 지역을 선택해주세요 (복수 선택 가능)
           </p>
           <PillCarousel>
@@ -530,11 +535,11 @@ export default function ProfileSetupPage() {
         <section className="-mx-6">
           <div className="mb-1 flex items-center gap-1.5 px-6">
             <Clock size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               활동 시간
             </h2>
           </div>
-          <p className="mb-4 px-6 text-xs text-cream/50">
+          <p className="mb-4 px-6 text-xs text-foreground/50">
             주로 활동하는 시간대를 선택해주세요 (복수 선택 가능, 선택)
           </p>
           <PillCarousel>
@@ -560,11 +565,11 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <Hash size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               관심사
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             관심사를 입력해주세요 (선택, 최대 {MAX_INTERESTS}개)
           </p>
           {interests.length > 0 && (
@@ -612,7 +617,7 @@ export default function ProfileSetupPage() {
           )}
           {interests.length < MAX_INTERESTS && (
             <div className="mt-3">
-              <p className="mb-2 text-[10px] text-cream/20">
+              <p className="mb-2 text-[10px] text-foreground-dim">
                 추천 관심사
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -624,7 +629,7 @@ export default function ProfileSetupPage() {
                     <button
                       key={tag}
                       onClick={() => addInterest(tag)}
-                      className="rounded-full border border-cream/8 px-2.5 py-1 text-[11px] text-cream/35 transition-colors hover:border-gold/20 hover:text-gold/60"
+                      className="rounded-full border border-line px-2.5 py-1 text-[11px] text-foreground/35 transition-colors hover:border-gold/20 hover:text-gold/60"
                     >
                       + {tag}
                     </button>
@@ -638,21 +643,21 @@ export default function ProfileSetupPage() {
         <section>
           <div className="mb-1 flex items-center gap-1.5">
             <Lock size={16} className="text-gold/60" />
-            <h2 className="text-base font-semibold text-cream">
+            <h2 className="text-base font-semibold text-foreground">
               공개 범위
             </h2>
           </div>
-          <p className="mb-4 text-xs text-cream/50">
+          <p className="mb-4 text-xs text-foreground/50">
             각 항목의 공개/비공개를 직접 제어할 수 있어요
           </p>
           <div className="flex flex-col gap-3">
             <button
               onClick={() => toggleVisibility('region')}
-              className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
+              className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-gold-soft/50"
             >
-              <span className="text-sm text-cream">지역</span>
+              <span className="text-sm text-foreground">지역</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-cream/50">
+                <span className="text-xs text-foreground/50">
                   {visibility.region === 'public' ? '공개' : '비공개'}
                 </span>
                 {visibility.region === 'public' ? (
@@ -664,11 +669,11 @@ export default function ProfileSetupPage() {
             </button>
             <button
               onClick={() => toggleVisibility('age')}
-              className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
+              className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-gold-soft/50"
             >
-              <span className="text-sm text-cream">나이</span>
+              <span className="text-sm text-foreground">나이</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs text-cream/50">
+                <span className="text-xs text-foreground/50">
                   {visibility.age === 'public' ? '공개' : '비공개'}
                 </span>
                 {visibility.age === 'public' ? (
@@ -682,14 +687,14 @@ export default function ProfileSetupPage() {
         </section>
 
         {/* 민감정보 동의 */}
-        <section className="rounded-xl border border-navy-light bg-navy-light/50 p-4">
+        <section className="rounded-xl border border-line bg-surface/50 p-4">
           <div className="mb-3 flex items-center gap-2">
             <ShieldAlert size={16} className="text-gold" />
-            <span className="text-sm font-medium text-cream">
+            <span className="text-sm font-medium text-foreground">
               민감정보 수집 동의
             </span>
           </div>
-          <p className="mb-3 text-xs leading-relaxed text-cream/50">
+          <p className="mb-3 text-xs leading-relaxed text-foreground/50">
             성정체성·성적 지향은 개인정보보호법상 민감정보에
             해당합니다. 안전한 매칭을 위해 별도의 명시적 동의가
             필요하며, 암호화하여 저장됩니다.
@@ -749,7 +754,7 @@ function SortablePhotoItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative aspect-square overflow-hidden rounded-xl border border-navy-light"
+      className="group relative aspect-square overflow-hidden rounded-xl border border-line"
       {...attributes}
       {...listeners}
     >
@@ -760,7 +765,7 @@ function SortablePhotoItem({
         className="object-cover"
       />
       {index === 0 && (
-        <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-navy">
+        <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-ink">
           <Star size={9} className="fill-navy" />
           대표
         </span>
@@ -771,7 +776,7 @@ function SortablePhotoItem({
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-navy/70 text-cream/70 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/70 text-foreground/70 opacity-0 transition-opacity group-hover:opacity-100"
       >
         <X size={12} />
       </button>

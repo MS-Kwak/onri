@@ -60,51 +60,53 @@ export default function SupportPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy">
-      <header className="sticky top-0 z-40 bg-navy">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center gap-2 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
           <HelpCircle size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">고객센터</h1>
+          <h1 className="text-lg font-bold text-foreground">
+            고객센터
+          </h1>
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <div className="flex flex-1 flex-col gap-6 px-5 pt-5 pb-10">
         {/* FAQ */}
         <section>
-          <h2 className="mb-3 text-sm font-semibold text-cream">
+          <h2 className="mb-3 text-sm font-semibold text-foreground">
             자주 묻는 질문
           </h2>
           <div className="flex flex-col gap-2">
             {FAQ_ITEMS.map((item, i) => (
               <div
                 key={i}
-                className="overflow-hidden rounded-2xl bg-cream/3"
+                className="overflow-hidden rounded-2xl bg-surface-secondary"
               >
                 <button
                   onClick={() => toggleFaq(i)}
-                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-cream/5"
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/5"
                 >
                   {item.icon}
-                  <span className="flex-1 text-sm font-medium text-cream/80">
+                  <span className="flex-1 text-sm font-medium text-foreground/80">
                     {item.q}
                   </span>
                   <ChevronDown
                     size={16}
-                    className={`shrink-0 text-cream/25 transition-transform duration-200 ${
+                    className={`shrink-0 text-foreground-soft transition-transform duration-200 ${
                       openIndex === i ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
                 {openIndex === i && (
-                  <div className="border-t border-cream/5 px-4 py-3">
-                    <p className="text-xs leading-relaxed text-cream/50">
+                  <div className="border-t border-line px-4 py-3">
+                    <p className="text-xs leading-relaxed text-foreground/50">
                       {item.a}
                     </p>
                   </div>
@@ -116,27 +118,27 @@ export default function SupportPage() {
 
         {/* 1:1 문의 */}
         <section>
-          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-cream">
+          <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-foreground">
             <MessageCircleMore size={14} className="text-gold/60" />
             1:1 문의하기
           </h2>
-          <div className="rounded-2xl bg-cream/3 p-4">
+          <div className="rounded-2xl bg-surface-secondary p-4">
             <textarea
               value={inquiryText}
               onChange={(e) => setInquiryText(e.target.value)}
               maxLength={500}
               rows={4}
               placeholder="궁금한 점이나 불편한 사항을 알려주세요"
-              className="w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+              className="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none"
             />
             <div className="mt-2 flex items-center justify-between">
-              <p className="text-[10px] text-cream/20">
+              <p className="text-[10px] text-foreground-dim">
                 {inquiryText.length}/500
               </p>
               <button
                 onClick={handleSubmitInquiry}
                 disabled={!inquiryText.trim()}
-                className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:bg-gold/90 active:scale-95 disabled:bg-cream/5 disabled:text-cream/20"
+                className="flex items-center gap-1 rounded-lg bg-gold px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-gold/90 active:scale-95 disabled:bg-surface-secondary disabled:text-foreground-dim"
               >
                 <Mail size={13} />
                 보내기
@@ -146,11 +148,11 @@ export default function SupportPage() {
         </section>
 
         {/* 운영 시간 안내 */}
-        <section className="rounded-2xl bg-cream/3 px-4 py-3.5">
-          <p className="text-xs font-medium text-cream/50">
+        <section className="rounded-2xl bg-surface-secondary px-4 py-3.5">
+          <p className="text-xs font-medium text-foreground/50">
             운영 시간 안내
           </p>
-          <p className="mt-1 text-[11px] leading-relaxed text-cream/30">
+          <p className="mt-1 text-[11px] leading-relaxed text-foreground-soft">
             평일 10:00 ~ 18:00 (주말·공휴일 휴무)
             <br />
             문의 접수 후 24시간 이내 답변드려요

@@ -3,7 +3,6 @@
 import { useState, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
-  ArrowLeft,
   User,
   Heart,
   HeartPlus,
@@ -27,6 +26,7 @@ import {
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
 import { IDENTITY_LABELS } from '@/lib/constants';
 import type { VerificationStatus } from '@/types';
@@ -126,20 +126,19 @@ export default function MyPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy pb-20">
+    <div className="flex min-h-dvh flex-col bg-background pb-20">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-navy">
-        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <User size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">마이페이지</h1>
+      <header className="sticky top-0 z-40 bg-background">
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <User size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              마이페이지
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <input
@@ -152,7 +151,7 @@ export default function MyPage() {
 
       <div className="flex-1 overflow-y-auto">
         {/* 프로필 카드 */}
-        <section className="mx-5 mt-3 overflow-hidden rounded-2xl bg-cream/3 p-5">
+        <section className="mx-5 mt-3 overflow-hidden rounded-2xl bg-surface-secondary p-5">
           <div className="flex items-center gap-4">
             <button
               onClick={() => profilePhotoRef.current?.click()}
@@ -163,19 +162,19 @@ export default function MyPage() {
                 name={profile.nickname}
                 size="xl"
               />
-              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-navy/50 opacity-0 transition-opacity group-hover:opacity-100">
-                <Camera size={18} className="text-cream" />
+              <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/50 opacity-0 transition-opacity group-hover:opacity-100">
+                <Camera size={18} className="text-foreground" />
               </span>
               {isVerified && (
-                <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-gold ring-2 ring-navy">
-                  <ShieldCheck size={13} className="text-navy" />
+                <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-gold ring-2 ring-background">
+                  <ShieldCheck size={13} className="text-ink" />
                 </span>
               )}
             </button>
 
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-cream">
+                <h2 className="text-xl font-bold text-foreground">
                   {profile.nickname}
                 </h2>
                 {isVerified && (
@@ -184,7 +183,7 @@ export default function MyPage() {
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex items-center gap-2 text-xs text-cream/40">
+              <div className="mt-1 flex items-center gap-2 text-xs text-foreground/40">
                 <span>{IDENTITY_LABELS[profile.identity]}</span>
                 <span>·</span>
                 <span>{profile.age}세</span>
@@ -192,7 +191,7 @@ export default function MyPage() {
                 <span>{profile.region}</span>
               </div>
               {profile.bio && (
-                <p className="mt-1.5 text-xs text-cream/30 line-clamp-1">
+                <p className="mt-1.5 text-xs text-foreground-soft line-clamp-1">
                   {profile.bio}
                 </p>
               )}
@@ -202,7 +201,7 @@ export default function MyPage() {
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => router.push('/my/edit')}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-cream/60 transition-colors hover:bg-cream/8"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-foreground/5 py-2.5 text-xs font-medium text-foreground/60 transition-colors hover:bg-foreground/8"
             >
               <Pencil size={13} />
               프로필 편집
@@ -215,16 +214,16 @@ export default function MyPage() {
         </section>
 
         {/* 하트 잔액 */}
-        <section className="mx-5 mt-3 flex items-center justify-between rounded-2xl bg-cream/3 px-5 py-4">
+        <section className="mx-5 mt-3 flex items-center justify-between rounded-2xl bg-surface-secondary px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
               <Heart size={20} className="fill-gold text-gold" />
             </div>
             <div>
-              <p className="text-xs text-cream/40">보유 하트</p>
-              <p className="text-xl font-bold text-cream">
+              <p className="text-xs text-foreground/40">보유 하트</p>
+              <p className="text-xl font-bold text-foreground">
                 {balance}
-                <span className="ml-0.5 text-sm font-normal text-cream/40">
+                <span className="ml-0.5 text-sm font-normal text-foreground/40">
                   개
                 </span>
               </p>
@@ -232,7 +231,7 @@ export default function MyPage() {
           </div>
           <button
             onClick={() => router.push('/my/hearts')}
-            className="flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-xs font-semibold text-navy transition-colors hover:bg-gold/90 active:scale-95"
+            className="flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-xs font-semibold text-ink transition-colors hover:bg-gold/90 active:scale-95"
           >
             <HeartPlus size={14} />
             충전하기
@@ -240,11 +239,11 @@ export default function MyPage() {
         </section>
 
         {/* 출석체크 */}
-        <section className="mx-5 mt-3 rounded-2xl bg-cream/3 p-5">
+        <section className="mx-5 mt-3 rounded-2xl bg-surface-secondary p-5">
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CalendarCheck size={16} className="text-gold" />
-              <h3 className="text-sm font-semibold text-cream">
+              <h3 className="text-sm font-semibold text-foreground">
                 출석체크
               </h3>
             </div>
@@ -272,7 +271,7 @@ export default function MyPage() {
                       ? 'bg-gold/10 ring-1 ring-gold/30'
                       : checked
                         ? 'bg-gold/5'
-                        : 'bg-cream/3'
+                        : 'bg-surface-secondary'
                   }`}
                 >
                   <span
@@ -280,8 +279,8 @@ export default function MyPage() {
                       isToday
                         ? 'text-gold'
                         : isFuture
-                          ? 'text-cream/15'
-                          : 'text-cream/30'
+                          ? 'text-foreground-dim'
+                          : 'text-foreground-soft'
                     }`}
                   >
                     {day}
@@ -289,12 +288,12 @@ export default function MyPage() {
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${
                       checked
-                        ? 'bg-gold text-navy'
+                        ? 'bg-gold text-ink'
                         : isToday
                           ? 'border border-dashed border-gold/40'
                           : isFuture
-                            ? 'border border-cream/5'
-                            : 'border border-cream/10'
+                            ? 'border border-line'
+                            : 'border border-foreground/10'
                     }`}
                   >
                     {checked ? (
@@ -309,9 +308,12 @@ export default function MyPage() {
           </div>
 
           {/* 보너스 안내 */}
-          <div className="mt-3 flex items-center gap-3 rounded-lg bg-cream/3 px-3 py-2">
-            <Info size={12} className="shrink-0 text-cream/20" />
-            <p className="text-[10px] text-cream/25">
+          <div className="mt-3 flex items-center gap-3 rounded-lg bg-surface-secondary px-3 py-2">
+            <Info
+              size={12}
+              className="shrink-0 text-foreground-dim"
+            />
+            <p className="text-[10px] text-foreground-soft">
               3일 연속 +{ATTENDANCE_REWARD.STREAK_3} · 7일 연속 +
               {ATTENDANCE_REWARD.STREAK_7} 보너스 하트
             </p>
@@ -323,8 +325,8 @@ export default function MyPage() {
             disabled={checkedToday}
             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-all ${
               checkedToday
-                ? 'bg-cream/5 text-cream/30'
-                : 'bg-gold text-navy active:scale-[0.98] hover:bg-gold/90'
+                ? 'bg-foreground/5 text-foreground-soft'
+                : 'bg-gold text-ink active:scale-[0.98] hover:bg-gold/90'
             }`}
           >
             {checkedToday ? (
@@ -384,7 +386,7 @@ export default function MyPage() {
 
         {/* 앱 버전 */}
         <div className="mt-6 mb-4 text-center">
-          <p className="text-[11px] text-cream/15">
+          <p className="text-[11px] text-foreground-dim">
             {BRAND.nameEn} v0.1.0
           </p>
         </div>
@@ -404,10 +406,10 @@ function MenuGroup({
 }) {
   return (
     <div className="mb-4">
-      <p className="mb-1.5 px-1 text-[11px] font-medium text-cream/25">
+      <p className="mb-1.5 px-1 text-[11px] font-medium text-foreground-soft">
         {label}
       </p>
-      <div className="overflow-hidden rounded-2xl bg-cream/3">
+      <div className="overflow-hidden rounded-2xl bg-surface-secondary">
         {children}
       </div>
     </div>
@@ -428,18 +430,22 @@ function MenuItem({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-cream/3"
+      className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-foreground/8"
     >
-      <span className={danger ? 'text-red-400/70' : 'text-cream/30'}>
+      <span
+        className={
+          danger ? 'text-red-400/70' : 'text-foreground-soft'
+        }
+      >
         {icon}
       </span>
       <span
-        className={`flex-1 text-sm ${danger ? 'text-red-400' : 'text-cream/70'}`}
+        className={`flex-1 text-sm ${danger ? 'text-red-400' : 'text-foreground/70'}`}
       >
         {label}
       </span>
       {!danger && (
-        <ChevronRight size={15} className="text-cream/15" />
+        <ChevronRight size={15} className="text-foreground-dim" />
       )}
     </button>
   );
@@ -457,7 +463,7 @@ function VerificationButton({
       return (
         <button
           disabled
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-cream/30"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-foreground/5 py-2.5 text-xs font-medium text-foreground-soft"
         >
           <ShieldCheck size={13} />
           셀카 인증 완료
@@ -467,7 +473,7 @@ function VerificationButton({
       return (
         <button
           disabled
-          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-amber-400/60"
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-foreground/5 py-2.5 text-xs font-medium text-amber-400/60"
         >
           <Clock size={13} />
           검토 중

@@ -72,17 +72,17 @@ export default function VerifyPage() {
     `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
-    <main className="flex min-h-dvh flex-col bg-navy">
+    <main className="flex min-h-dvh flex-col bg-background">
       {/* 고정 헤더 + 프로그레스 */}
-      <div className="sticky top-0 z-40 bg-navy">
+      <div className="sticky top-0 z-40 bg-background">
         <header className="flex items-center gap-3 px-5 pt-14 pb-2">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-lg font-semibold text-cream">
+          <h1 className="text-lg font-semibold text-foreground">
             본인인증
           </h1>
         </header>
@@ -94,19 +94,21 @@ export default function VerifyPage() {
               <span className="text-[10px] text-gold">본인인증</span>
             </div>
             <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="h-1 w-full rounded-full bg-navy-light" />
-              <span className="text-[10px] text-cream/30">
+              <div className="h-1 w-full rounded-full bg-surface" />
+              <span className="text-[10px] text-foreground-soft">
                 프로필 설정
               </span>
             </div>
             <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="h-1 w-full rounded-full bg-navy-light" />
-              <span className="text-[10px] text-cream/30">완료</span>
+              <div className="h-1 w-full rounded-full bg-surface" />
+              <span className="text-[10px] text-foreground-soft">
+                완료
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </div>
 
       {/* 안내 */}
@@ -115,7 +117,7 @@ export default function VerifyPage() {
           size={18}
           className="mt-0.5 shrink-0 text-gold"
         />
-        <p className="text-sm leading-relaxed text-cream/60">
+        <p className="text-sm leading-relaxed text-foreground/60">
           만 19세 이상만 가입할 수 있습니다.
           <br />
           휴대폰 본인인증이 필요합니다.
@@ -126,7 +128,7 @@ export default function VerifyPage() {
       <div className="flex flex-1 flex-col gap-4 px-6">
         {/* 통신사 선택 (Radix Select) */}
         <Select.Root value={carrier} onValueChange={setCarrier}>
-          <Select.Trigger className="flex w-full items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none transition-colors data-placeholder:text-gray hover:border-gold-soft/50 focus:border-gold-soft">
+          <Select.Trigger className="flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none transition-colors data-placeholder:text-gray hover:border-gold-soft/50 focus:border-gold-soft">
             <Select.Value placeholder="통신사 선택" />
             <Select.Icon>
               <ChevronDown size={16} className="text-gray" />
@@ -135,7 +137,7 @@ export default function VerifyPage() {
 
           <Select.Portal>
             <Select.Content
-              className="overflow-hidden rounded-xl border border-navy-light bg-navy-light shadow-xl"
+              className="overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
               position="popper"
               sideOffset={4}
             >
@@ -144,7 +146,7 @@ export default function VerifyPage() {
                   <Select.Item
                     key={c}
                     value={c}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-cream outline-none transition-colors data-highlighted:bg-gold/10 data-highlighted:text-gold"
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground outline-none transition-colors data-highlighted:bg-gold/10 data-highlighted:text-gold"
                   >
                     <Select.ItemText>{c}</Select.ItemText>
                     <Select.ItemIndicator>
@@ -163,7 +165,7 @@ export default function VerifyPage() {
           placeholder="이름"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
         />
 
         {/* 주민번호 */}
@@ -177,9 +179,9 @@ export default function VerifyPage() {
             onChange={(e) =>
               setBirthPrefix(e.target.value.replace(/\D/g, ''))
             }
-            className="min-w-0 flex-1 rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+            className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
           />
-          <span className="shrink-0 text-cream/30">—</span>
+          <span className="shrink-0 text-foreground-soft">—</span>
           <input
             type="text"
             inputMode="numeric"
@@ -189,9 +191,9 @@ export default function VerifyPage() {
             onChange={(e) =>
               setGenderDigit(e.target.value.replace(/\D/g, ''))
             }
-            className="w-10 shrink-0 rounded-xl border border-navy-light bg-navy-light px-2 py-3 text-center text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+            className="w-10 shrink-0 rounded-xl border border-line bg-surface px-2 py-3 text-center text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
           />
-          <span className="shrink-0 whitespace-nowrap text-sm text-cream/25">
+          <span className="shrink-0 whitespace-nowrap text-sm text-foreground-soft">
             ● ● ● ● ● ●
           </span>
         </div>
@@ -205,7 +207,7 @@ export default function VerifyPage() {
           onChange={(e) =>
             setPhone(e.target.value.replace(/\D/g, ''))
           }
-          className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
         />
 
         {/* 인증번호 요청 / 입력 */}
@@ -230,7 +232,7 @@ export default function VerifyPage() {
                 onChange={(e) =>
                   setVerifyCode(e.target.value.replace(/\D/g, ''))
                 }
-                className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-16 text-sm text-cream outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
+                className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-16 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
               />
               {timer > 0 && (
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-gold">
@@ -240,7 +242,7 @@ export default function VerifyPage() {
             </div>
             <button
               onClick={handleResend}
-              className="shrink-0 rounded-xl border border-navy-light p-3 text-gray transition-colors hover:border-gold-soft/50 hover:text-gold"
+              className="shrink-0 rounded-xl border border-line p-3 text-gray transition-colors hover:border-gold-soft/50 hover:text-gold"
             >
               <RefreshCw size={16} />
             </button>
@@ -255,10 +257,10 @@ export default function VerifyPage() {
             className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-gray/50 transition-colors data-[state=checked]:border-gold data-[state=checked]:bg-gold"
           >
             <Checkbox.Indicator>
-              <Check size={12} className="text-navy" />
+              <Check size={12} className="text-ink" />
             </Checkbox.Indicator>
           </Checkbox.Root>
-          <span className="cursor-pointer text-xs leading-relaxed text-cream/50">
+          <span className="cursor-pointer text-xs leading-relaxed text-foreground/50">
             본인확인 서비스 이용약관, 개인정보 수집·이용 동의
             (민감정보 포함)
           </span>

@@ -9,7 +9,7 @@ export default function CompletePage() {
   const router = useRouter();
 
   return (
-    <main className="flex min-h-dvh flex-col bg-navy">
+    <main className="flex min-h-dvh flex-col bg-background">
       {/* 프로그레스 바 (3단계 완료) */}
       <div className="px-6 pt-14 pb-4">
         <div className="flex gap-1.5">
@@ -36,10 +36,10 @@ export default function CompletePage() {
 
         {/* 환영 메시지 */}
         <div className="flex flex-col items-center gap-3 text-center">
-          <h1 className="text-2xl font-bold text-cream">
+          <h1 className="text-2xl font-bold text-foreground">
             가입이 완료되었어요
           </h1>
-          <p className="text-sm leading-relaxed text-cream/60">
+          <p className="text-sm leading-relaxed text-foreground/60">
             온리에 오신 걸 환영합니다.
             <br />
             온전한 나로, 결이 맞는 사람을 만나보세요.
@@ -56,9 +56,9 @@ export default function CompletePage() {
         />
 
         {/* 무료 하트 안내 */}
-        <div className="flex items-center gap-2 rounded-xl bg-navy-light px-5 py-3">
+        <div className="flex items-center gap-2 rounded-xl bg-surface px-5 py-3">
           <Heart size={16} className="fill-gold text-gold" />
-          <span className="text-sm text-cream/80">
+          <span className="text-sm text-foreground/80">
             가입 축하 하트{' '}
             <span className="font-semibold text-gold">10개</span>가
             지급되었어요

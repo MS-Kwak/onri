@@ -84,7 +84,7 @@ export default function ProfileDetailPage() {
     if (balance < HEART_COST.SIGNAL) {
       toast.error('하트가 부족해요', {
         description: '출석체크나 충전으로 하트를 모아보세요',
-        icon: <Heart size={16} className="text-cream/40" />,
+        icon: <Heart size={16} className="text-foreground/40" />,
       });
       return;
     }
@@ -131,16 +131,16 @@ export default function ProfileDetailPage() {
 
   if (!profile) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-navy">
-        <p className="text-cream/60">프로필을 찾을 수 없어요</p>
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <p className="text-foreground/60">프로필을 찾을 수 없어요</p>
       </div>
     );
   }
 
   return (
-    <div className="relative min-h-dvh bg-navy pb-28">
+    <div className="relative min-h-dvh bg-background pb-28">
       {/* 프로필 이미지 영역 */}
-      <div className="relative aspect-3/4 w-full overflow-hidden bg-navy-light">
+      <div className="relative aspect-3/4 w-full overflow-hidden bg-surface">
         {profile.thumbnailUrl ? (
           <Image
             src={profile.thumbnailUrl}
@@ -149,21 +149,21 @@ export default function ProfileDetailPage() {
             className="object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center bg-linear-to-b from-navy-light to-navy">
-            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-navy text-5xl font-bold text-gold ring-2 ring-gold/20">
+          <div className="flex h-full w-full items-center justify-center bg-linear-to-b from-profile-grad-from to-profile-grad-to">
+            <div className="flex h-28 w-28 items-center justify-center rounded-full bg-background text-5xl font-bold text-gold ring-2 ring-gold/20">
               {profile.nickname.charAt(0)}
             </div>
           </div>
         )}
 
         {/* 그라데이션 오버레이 */}
-        <div className="absolute inset-0 bg-linear-to-t from-navy via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-background via-transparent to-transparent" />
 
         {/* 상단 네비게이션 */}
         <div className="absolute top-0 right-0 left-0 z-10 flex items-center justify-between px-4 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/40 text-cream backdrop-blur-sm transition-colors hover:bg-navy/60"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-background/40 text-foreground backdrop-blur-sm transition-colors hover:bg-background/60"
           >
             <ArrowLeft size={20} />
           </button>
@@ -171,7 +171,7 @@ export default function ProfileDetailPage() {
           <div className="relative">
             <button
               onClick={() => setShowMenu(!showMenu)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-navy/40 text-cream backdrop-blur-sm transition-colors hover:bg-navy/60"
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-background/40 text-foreground backdrop-blur-sm transition-colors hover:bg-background/60"
             >
               <MoreVertical size={20} />
             </button>
@@ -183,15 +183,15 @@ export default function ProfileDetailPage() {
                   className="fixed inset-0 z-40"
                   onClick={() => setShowMenu(false)}
                 />
-                <div className="absolute top-12 right-0 z-50 min-w-[140px] overflow-hidden rounded-xl border border-navy-light bg-navy shadow-xl">
+                <div className="absolute top-12 right-0 z-50 min-w-[140px] overflow-hidden rounded-xl border border-line bg-background shadow-xl">
                   <button
                     onClick={handleReport}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-cream/70 transition-colors hover:bg-cream/5"
+                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground/70 transition-colors hover:bg-foreground/5"
                   >
                     <Flag size={15} />
                     신고하기
                   </button>
-                  <div className="mx-3 h-px bg-navy-light" />
+                  <div className="mx-3 h-px bg-line" />
                   <button
                     onClick={handleBlock}
                     className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-400 transition-colors hover:bg-red-400/5"
@@ -207,14 +207,14 @@ export default function ProfileDetailPage() {
       </div>
 
       {/* 프로필 정보 */}
-      <div className="-mt-16 relative z-10 px-5">
+      <div className="-mt-20 relative z-10 px-5">
         {/* 닉네임 · 나이 · 셀카 인증 */}
         <div className="flex items-center gap-2.5">
-          <h1 className="text-2xl font-bold text-cream">
+          <h1 className="text-2xl font-bold text-foreground">
             {profile.nickname}
           </h1>
           {visibleAge && (
-            <span className="text-lg text-cream/50">
+            <span className="text-lg text-foreground/50">
               {profile.age}
             </span>
           )}
@@ -225,7 +225,7 @@ export default function ProfileDetailPage() {
             </span>
           )}
           {profile.verificationStatus === 'pending' && (
-            <span className="flex items-center gap-1 rounded-full bg-cream/10 px-2.5 py-0.5 text-[11px] font-medium text-cream/40">
+            <span className="flex items-center gap-1 rounded-full bg-foreground/10 px-2.5 py-0.5 text-[11px] font-medium text-foreground/40">
               <Clock size={12} />
               인증 검토 중
             </span>
@@ -240,7 +240,7 @@ export default function ProfileDetailPage() {
           {profile.lookingFor.map((goal) => (
             <span
               key={goal}
-              className="rounded-lg border border-cream/10 bg-cream/5 px-3 py-1 text-xs text-cream/70"
+              className="rounded-lg border border-line bg-foreground/5 px-3 py-1 text-xs text-foreground/70"
             >
               {RELATION_GOAL_LABELS[goal]}
             </span>
@@ -250,14 +250,14 @@ export default function ProfileDetailPage() {
         {/* 소개 */}
         {profile.bio && (
           <div className="mt-5">
-            <p className="leading-relaxed text-[15px] text-cream/80">
+            <p className="leading-relaxed text-[15px] text-foreground/80">
               {profile.bio}
             </p>
           </div>
         )}
 
         {/* 구분선 */}
-        <div className="my-5 h-px bg-cream/5" />
+        <div className="mt-6 mb-5 h-px bg-line" />
 
         {/* 상세 정보 그리드 */}
         <div className="grid grid-cols-1 gap-3">
@@ -296,19 +296,21 @@ export default function ProfileDetailPage() {
             }
           />
 
-          <div className="flex items-start gap-3 rounded-2xl bg-cream/3 px-4 py-3.5">
+          <div className="flex items-start gap-3 rounded-2xl bg-surface-secondary px-4 py-3.5">
             <Sparkles
               size={16}
               className="mt-0.5 shrink-0 text-gold/60"
             />
             <div className="flex-1">
-              <span className="text-xs text-cream/40">관심사</span>
+              <span className="text-xs text-foreground/40">
+                관심사
+              </span>
               {profile.interests.length > 0 ? (
                 <div className="mt-1.5 flex flex-wrap gap-1.5">
                   {profile.interests.map((interest) => (
                     <span
                       key={interest}
-                      className="rounded-full bg-cream/5 px-2.5 py-1 text-xs text-cream/60"
+                      className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs text-foreground/60"
                     >
                       {interest}
                     </span>
@@ -316,7 +318,9 @@ export default function ProfileDetailPage() {
                 </div>
               ) : (
                 <div className="mt-1.5 flex items-center gap-2">
-                  <span className="text-sm text-cream/25">-</span>
+                  <span className="text-sm text-foreground-soft">
+                    -
+                  </span>
                   {isMyProfile && (
                     <button
                       onClick={() =>
@@ -337,7 +341,7 @@ export default function ProfileDetailPage() {
         </div>
 
         {/* 가입일 */}
-        <p className="mt-6 text-center text-[11px] text-cream/20">
+        <p className="mt-6 text-center text-[11px] text-foreground-dim">
           {new Date(profile.createdAt).toLocaleDateString('ko-KR', {
             year: 'numeric',
             month: 'long',
@@ -348,10 +352,12 @@ export default function ProfileDetailPage() {
       </div>
 
       {/* 하단 고정 CTA */}
-      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-cream/5 bg-navy/95 px-5 pb-8 pt-4 backdrop-blur-md">
+      <div className="fixed bottom-0 left-0 right-0 z-30 border-t border-line bg-background/95 px-5 pb-8 pt-4 backdrop-blur-md">
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center">
-            <span className="text-[10px] text-cream/30">보유</span>
+            <span className="text-[10px] text-foreground-soft">
+              보유
+            </span>
             <div className="flex items-center gap-1">
               <Heart size={12} className="fill-gold text-gold" />
               <span className="text-sm font-semibold text-gold">
@@ -365,10 +371,10 @@ export default function ProfileDetailPage() {
             disabled={heartStatus !== 'idle'}
             className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-all duration-300 ${
               heartStatus === 'sent'
-                ? 'bg-cream/10 text-cream/50'
+                ? 'bg-foreground/10 text-foreground/50'
                 : heartStatus === 'sending'
-                  ? 'bg-gold/80 text-navy'
-                  : 'bg-gold text-navy active:scale-[0.98] hover:bg-gold/90'
+                  ? 'bg-gold/80 text-ink'
+                  : 'bg-gold text-ink active:scale-[0.98] hover:bg-gold/90'
             }`}
           >
             {heartStatus === 'sending' ? (
@@ -404,7 +410,7 @@ export default function ProfileDetailPage() {
                   className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
                     reportReason === reason.id
                       ? 'border-gold/30 bg-gold/10 text-gold'
-                      : 'border-transparent bg-navy-light text-cream/60 hover:bg-cream/5'
+                      : 'border-transparent bg-surface text-foreground/60 hover:bg-foreground/5'
                   }`}
                 >
                   <Icon size={14} />
@@ -421,7 +427,7 @@ export default function ProfileDetailPage() {
               maxLength={200}
               rows={3}
               placeholder="신고 사유를 자세히 알려주세요"
-              className="mt-3 w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+              className="mt-3 w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none"
             />
           )}
 
@@ -431,7 +437,7 @@ export default function ProfileDetailPage() {
               !reportReason ||
               (reportReason === 'OTHER' && !reportDetail.trim())
             }
-            className="mt-4 w-full rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500/90 active:scale-[0.98] disabled:bg-cream/5 disabled:text-cream/20"
+            className="mt-4 w-full rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500/90 active:scale-[0.98] disabled:bg-surface-secondary disabled:text-foreground-dim"
           >
             신고 접수하기
           </button>
@@ -455,16 +461,16 @@ function InfoRow({
   const isEmpty = value === '-';
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-cream/3 px-4 py-3.5">
+    <div className="flex items-center gap-3 rounded-2xl bg-surface-secondary px-4 py-3.5">
       <span className="text-gold/60">{icon}</span>
       <div className="flex flex-1 items-center justify-between">
-        <span className="text-xs text-cream/40">{label}</span>
+        <span className="text-xs text-foreground/40">{label}</span>
         <div className="flex items-center gap-2">
           <span
             className={
               isEmpty
-                ? 'text-sm text-cream/25'
-                : 'text-sm text-cream/70'
+                ? 'text-sm text-foreground-soft'
+                : 'text-sm text-foreground/70'
             }
           >
             {value}

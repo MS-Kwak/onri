@@ -221,21 +221,21 @@ export default function ProfileEditPage() {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-navy">
-      <header className="sticky top-0 z-40 bg-navy">
+    <div className="flex min-h-dvh flex-col bg-background">
+      <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center gap-2 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
           >
             <ArrowLeft size={20} />
           </button>
           <Pencil size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-cream">
+          <h1 className="text-lg font-bold text-foreground">
             프로필 편집
           </h1>
         </div>
-        <div className="h-px bg-navy-light" />
+        <div className="h-px bg-line" />
       </header>
 
       <div className="flex flex-1 flex-col gap-8 overflow-y-auto px-6 pt-6 pb-10">
@@ -275,10 +275,13 @@ export default function ProfileEditPage() {
                 {photos.length < MAX_PHOTOS && (
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-cream/15 transition-colors hover:border-gold/30 hover:bg-cream/3"
+                    className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-line transition-colors hover:border-gold/30 hover:bg-foreground/8"
                   >
-                    <ImagePlus size={20} className="text-cream/25" />
-                    <span className="text-[10px] text-cream/25">
+                    <ImagePlus
+                      size={20}
+                      className="text-foreground-soft"
+                    />
+                    <span className="text-[10px] text-foreground-soft">
                       {photos.length}/{MAX_PHOTOS}
                     </span>
                   </button>
@@ -319,9 +322,9 @@ export default function ProfileEditPage() {
             maxLength={100}
             rows={3}
             placeholder="자유롭게 작성해주세요"
-            className="w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+            className="w-full resize-none rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:border-gold-soft/50 focus:outline-none"
           />
-          <p className="mt-1 text-right text-[10px] text-cream/20">
+          <p className="mt-1 text-right text-[10px] text-foreground-dim">
             {bio.length}/100
           </p>
         </Section>
@@ -334,7 +337,7 @@ export default function ProfileEditPage() {
         >
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-cream/40">
+              <label className="mb-1.5 block text-xs text-foreground/40">
                 키
               </label>
               <div className="relative">
@@ -343,15 +346,15 @@ export default function ProfileEditPage() {
                   placeholder="-"
                   value={height}
                   onChange={(e) => setHeight(e.target.value)}
-                  className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-10 text-sm text-cream placeholder:text-cream/20 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-10 text-sm text-foreground placeholder:text-foreground-dim focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/25">
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-foreground-soft">
                   cm
                 </span>
               </div>
             </div>
             <div className="flex-1">
-              <label className="mb-1.5 block text-xs text-cream/40">
+              <label className="mb-1.5 block text-xs text-foreground/40">
                 몸무게
               </label>
               <div className="relative">
@@ -360,9 +363,9 @@ export default function ProfileEditPage() {
                   placeholder="-"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-10 text-sm text-cream placeholder:text-cream/20 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-10 text-sm text-foreground placeholder:text-foreground-dim focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                 />
-                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/25">
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-foreground-soft">
                   kg
                 </span>
               </div>
@@ -539,7 +542,7 @@ export default function ProfileEditPage() {
 
           {interests.length < 10 && (
             <div className="mt-3">
-              <p className="mb-2 text-[10px] text-cream/20">
+              <p className="mb-2 text-[10px] text-foreground-dim">
                 추천 관심사
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -551,7 +554,7 @@ export default function ProfileEditPage() {
                     <button
                       key={tag}
                       onClick={() => addInterest(tag)}
-                      className="rounded-full border border-cream/8 px-2.5 py-1 text-[11px] text-cream/35 transition-colors hover:border-gold/20 hover:text-gold/60"
+                      className="rounded-full border border-line px-2.5 py-1 text-[11px] text-foreground/35 transition-colors hover:border-gold/20 hover:text-gold/60"
                     >
                       + {tag}
                     </button>
@@ -583,7 +586,7 @@ export default function ProfileEditPage() {
       </div>
 
       {/* 하단 저장 버튼 (모바일용) */}
-      <div className="sticky bottom-0 bg-navy px-6 pt-2 pb-8">
+      <div className="sticky bottom-0 bg-background px-6 pt-2 pb-8">
         <Button
           variant="primary"
           size="lg"
@@ -616,11 +619,13 @@ function Section({
     <section className={className}>
       <div className="mb-1 flex items-center gap-1.5">
         <span className="text-gold/60">{icon}</span>
-        <h2 className="text-base font-semibold text-cream">
+        <h2 className="text-base font-semibold text-foreground">
           {title}
         </h2>
       </div>
-      {desc && <p className="mb-4 text-xs text-cream/50">{desc}</p>}
+      {desc && (
+        <p className="mb-4 text-xs text-foreground/50">{desc}</p>
+      )}
       {children}
     </section>
   );
@@ -638,11 +643,11 @@ function VisibilityRow({
   return (
     <button
       onClick={onToggle}
-      className="flex items-center justify-between rounded-xl border border-navy-light bg-navy-light px-4 py-3 transition-colors hover:border-gold-soft/50"
+      className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 transition-colors hover:border-gold-soft/50"
     >
-      <span className="text-sm text-cream">{label}</span>
+      <span className="text-sm text-foreground">{label}</span>
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-cream/50">
+        <span className="text-xs text-foreground/50">
           {value === 'public' ? '공개' : '비공개'}
         </span>
         {value === 'public' ? (
@@ -686,7 +691,7 @@ function SortablePhotoItem({
     <div
       ref={setNodeRef}
       style={style}
-      className="group relative aspect-square overflow-hidden rounded-xl border border-navy-light"
+      className="group relative aspect-square overflow-hidden rounded-xl border border-line"
       {...attributes}
       {...listeners}
     >
@@ -697,8 +702,8 @@ function SortablePhotoItem({
         className="object-cover"
       />
       {index === 0 && (
-        <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-navy">
-          <Star size={9} className="fill-navy" />
+        <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 rounded-md bg-gold px-1.5 py-0.5 text-[10px] font-semibold text-ink">
+          <Star size={9} className="fill-ink" />
           대표
         </span>
       )}
@@ -708,7 +713,7 @@ function SortablePhotoItem({
           onRemove();
         }}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-navy/70 text-cream/70 opacity-0 transition-opacity group-hover:opacity-100"
+        className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/70 text-foreground/70 opacity-0 transition-opacity group-hover:opacity-100"
       >
         <X size={12} />
       </button>

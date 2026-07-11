@@ -41,7 +41,7 @@ export function Avatar({
   return (
     <div
       className={twMerge(
-        'flex shrink-0 items-center justify-center rounded-full bg-gold font-semibold text-navy',
+        'flex shrink-0 items-center justify-center rounded-full bg-gold font-semibold text-ink',
         sizeStyles[size],
         className,
       )}

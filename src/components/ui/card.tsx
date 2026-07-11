@@ -1,25 +1,24 @@
-import { type HTMLAttributes, forwardRef } from "react";
-import { twMerge } from "tailwind-merge";
+import { type HTMLAttributes, forwardRef } from 'react';
+import { twMerge } from 'tailwind-merge';
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
-  padding?: "none" | "sm" | "md" | "lg";
+  padding?: 'none' | 'sm' | 'md' | 'lg';
 };
 
 const paddingStyles = {
-  none: "",
-  sm: "p-3",
-  md: "p-4",
-  lg: "p-6",
+  none: '',
+  sm: 'p-3',
+  md: 'p-4',
+  lg: 'p-6',
 };
 
 const Card = forwardRef<HTMLDivElement, CardProps>(
-  ({ padding = "md", className, children, ...props }, ref) => {
+  ({ padding = 'md', className, children, ...props }, ref) => {
     return (
       <div
         ref={ref}
         className={twMerge(
-          "rounded-2xl border border-line bg-surface shadow-sm",
-          "dark:border-navy-light dark:bg-navy-light",
+          'rounded-2xl border border-line bg-surface shadow-sm',
           paddingStyles[padding],
           className,
         )}
@@ -31,7 +30,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
   },
 );
 
-Card.displayName = "Card";
+Card.displayName = 'Card';
 
 export { Card };
 export type { CardProps };

@@ -32,16 +32,16 @@ export function Checkbox({
         className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-gray/50 transition-colors data-[state=checked]:border-gold data-[state=checked]:bg-gold"
       >
         <CheckboxPrimitive.Indicator>
-          <Check size={12} className="text-navy" />
+          <Check size={12} className="text-ink" />
         </CheckboxPrimitive.Indicator>
       </CheckboxPrimitive.Root>
       {(label || description) && (
         <div className="flex flex-col gap-0.5">
           {label && (
-            <span className="text-sm text-cream">{label}</span>
+            <span className="text-sm text-foreground">{label}</span>
           )}
           {description && (
-            <span className="text-xs text-cream/50">
+            <span className="text-xs text-foreground/50">
               {description}
             </span>
           )}

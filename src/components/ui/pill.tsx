@@ -24,14 +24,14 @@ const variantStyles: Record<
   },
   active: {
     base: 'bg-gold/10 text-gold border border-gold-soft',
-    active: 'bg-gold text-navy border-gold',
+    active: 'bg-gold text-ink border-gold',
   },
   identity: {
-    base: 'bg-navy-light/50 text-cream border border-navy-light dark:bg-navy-light dark:border-navy-light',
+    base: 'bg-surface/50 text-foreground border border-line',
     active: 'bg-gold/15 text-gold border-gold-soft',
   },
   status: {
-    base: 'bg-paper text-gray border border-line dark:bg-navy-light dark:text-cream dark:border-navy-light',
+    base: 'bg-surface text-gray border border-line',
     active: 'bg-gold/10 text-gold border-gold-soft',
   },
 };
