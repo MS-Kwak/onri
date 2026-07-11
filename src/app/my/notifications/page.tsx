@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   Bell,
   Heart,
-  MessageCircle,
+  MessageCircleMore,
   Megaphone,
   CalendarCheck,
   ShieldCheck,
@@ -42,7 +42,7 @@ export default function NotificationsPage() {
     },
     {
       id: 'chat',
-      icon: <MessageCircle size={17} className="text-gold" />,
+      icon: <MessageCircleMore size={17} className="text-gold" />,
       label: '채팅 알림',
       desc: '새로운 메시지가 오면 알려드려요',
       enabled: true,

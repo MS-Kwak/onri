@@ -8,7 +8,7 @@ import {
   Check,
   X,
   Clock,
-  MessageCircle,
+  MessageCircleMore,
   Inbox,
   Send,
   ArrowLeft,
@@ -81,7 +81,7 @@ export default function SignalPage() {
     );
     toast.success(`${profile?.nickname}님과 매칭되었어요!`, {
       description: '채팅을 시작해보세요',
-      icon: <MessageCircle size={16} className="text-gold" />,
+      icon: <MessageCircleMore size={16} className="text-gold" />,
     });
   };
 
@@ -348,7 +348,7 @@ function SignalCard({
               onClick={onChat}
               className="flex h-9 items-center gap-1.5 rounded-xl border border-gold/30 bg-gold/10 px-3.5 text-xs font-medium text-gold transition-colors hover:bg-gold/20"
             >
-              <MessageCircle size={14} />
+              <MessageCircleMore size={14} />
               채팅
             </button>
           )}

@@ -7,7 +7,7 @@ import {
   HelpCircle,
   ChevronDown,
   Mail,
-  MessageSquare,
+  MessageCircleMore,
   Heart,
   UserX,
   ShieldCheck,
@@ -117,7 +117,7 @@ export default function SupportPage() {
         {/* 1:1 문의 */}
         <section>
           <h2 className="mb-3 flex items-center gap-1.5 text-sm font-semibold text-cream">
-            <MessageSquare size={14} className="text-gold/60" />
+            <MessageCircleMore size={14} className="text-gold/60" />
             1:1 문의하기
           </h2>
           <div className="rounded-2xl bg-cream/3 p-4">

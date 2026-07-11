@@ -16,6 +16,12 @@ import {
   Ban,
   Loader2,
   Plus,
+  UserX,
+  MessageSquareWarning,
+  AlertTriangle,
+  ShieldAlert,
+  CircleAlert,
+  FileWarning,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -33,11 +39,25 @@ import { useHeartStore } from '@/store';
 type HeartStatus = 'idle' | 'sending' | 'sent';
 
 const REPORT_REASONS = [
-  { id: 'FAKE_PROFILE', label: '허위 프로필 (타인 사진 도용 등)' },
-  { id: 'HARASSMENT', label: '욕설·비하·혐오 표현' },
-  { id: 'SPAM', label: '스팸·광고·홍보' },
-  { id: 'INAPPROPRIATE', label: '불쾌한 콘텐츠' },
-  { id: 'OTHER', label: '기타 (직접 입력)' },
+  {
+    id: 'FAKE_PROFILE',
+    label: '허위 프로필 (타인 사진 도용 등)',
+    icon: UserX,
+  },
+  {
+    id: 'HARASSMENT',
+    label: '욕설 · 비하 · 혐오 표현',
+    icon: MessageSquareWarning,
+  },
+  { id: 'SPAM', label: '스팸 · 광고 · 홍보', icon: AlertTriangle },
+  {
+    id: 'SEXUAL',
+    label: '성적 불쾌감을 주는 콘텐츠',
+    icon: ShieldAlert,
+  },
+  { id: 'THREAT', label: '협박 · 위협', icon: CircleAlert },
+  { id: 'OUTING', label: '아웃팅 · 개인정보 유출 시도', icon: Flag },
+  { id: 'OTHER', label: '기타 (직접 입력)', icon: FileWarning },
 ];
 
 export default function ProfileDetailPage() {
@@ -374,20 +394,24 @@ export default function ProfileDetailPage() {
           title="신고하기"
           description={`${profile?.nickname}님을 신고하는 이유를 선택해주세요`}
         >
-          <div className="flex flex-col gap-2">
-            {REPORT_REASONS.map((reason) => (
-              <button
-                key={reason.id}
-                onClick={() => setReportReason(reason.id)}
-                className={`rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
-                  reportReason === reason.id
-                    ? 'border-gold bg-gold/5 text-gold'
-                    : 'border-cream/8 text-cream/60 hover:border-cream/15'
-                }`}
-              >
-                {reason.label}
-              </button>
-            ))}
+          <div className="flex flex-col gap-1.5">
+            {REPORT_REASONS.map((reason) => {
+              const Icon = reason.icon;
+              return (
+                <button
+                  key={reason.id}
+                  onClick={() => setReportReason(reason.id)}
+                  className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+                    reportReason === reason.id
+                      ? 'border-gold/30 bg-gold/10 text-gold'
+                      : 'border-transparent bg-navy-light text-cream/60 hover:bg-cream/5'
+                  }`}
+                >
+                  <Icon size={14} />
+                  {reason.label}
+                </button>
+              );
+            })}
           </div>
 
           {reportReason === 'OTHER' && (
