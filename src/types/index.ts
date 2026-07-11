@@ -27,8 +27,10 @@ export type Profile = {
   identity: Identity;
   lookingFor: RelationGoal[];
   bio: string;
+  height: number | null;
+  weight: number | null;
   interests: string[];
-  activeTime: string;
+  activeTime: string[];
   visibility: {
     region: Visibility;
     age: Visibility;

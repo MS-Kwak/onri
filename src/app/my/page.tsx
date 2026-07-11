@@ -347,12 +347,12 @@ export default function MyPage() {
             <MenuItem
               icon={<Bell size={17} />}
               label="알림 설정"
-              onClick={() => toast('알림 설정 (준비 중)')}
+              onClick={() => router.push('/my/notifications')}
             />
             <MenuItem
               icon={<Ban size={17} />}
               label="차단 목록"
-              onClick={() => toast('차단 목록 (준비 중)')}
+              onClick={() => router.push('/my/blocked')}
             />
           </MenuGroup>
 
@@ -360,12 +360,12 @@ export default function MyPage() {
             <MenuItem
               icon={<HelpCircle size={17} />}
               label="고객센터"
-              onClick={() => toast('고객센터 (준비 중)')}
+              onClick={() => router.push('/my/support')}
             />
             <MenuItem
               icon={<FileText size={17} />}
               label="이용약관 · 개인정보처리방침"
-              onClick={() => toast('약관 (준비 중)')}
+              onClick={() => router.push('/my/terms')}
             />
           </MenuGroup>
 

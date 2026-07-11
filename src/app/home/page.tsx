@@ -141,7 +141,7 @@ export default function HomePage() {
           {/* 우측: 하트 + 필터 + 프로필 */}
           <div className="flex items-center gap-2.5">
             <button
-              onClick={() => toast('하트 충전 (준비 중)')}
+              onClick={() => router.push('/my/hearts')}
               className="flex items-center gap-1 rounded-full bg-gold/10 px-2.5 py-1.5 transition-colors hover:bg-gold/15"
             >
               <Heart size={13} className="fill-gold text-gold" />

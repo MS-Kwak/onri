@@ -11,12 +11,14 @@ import {
   MapPin,
   Clock,
   Sparkles,
+  Ruler,
   Flag,
   Ban,
   Loader2,
   Plus,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   MOCK_PROFILES,
   MOCK_CURRENT_USER,
@@ -30,6 +32,14 @@ import { useHeartStore } from '@/store';
 
 type HeartStatus = 'idle' | 'sending' | 'sent';
 
+const REPORT_REASONS = [
+  { id: 'FAKE_PROFILE', label: '허위 프로필 (타인 사진 도용 등)' },
+  { id: 'HARASSMENT', label: '욕설·비하·혐오 표현' },
+  { id: 'SPAM', label: '스팸·광고·홍보' },
+  { id: 'INAPPROPRIATE', label: '불쾌한 콘텐츠' },
+  { id: 'OTHER', label: '기타 (직접 입력)' },
+];
+
 export default function ProfileDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -38,6 +48,9 @@ export default function ProfileDetailPage() {
 
   const [heartStatus, setHeartStatus] = useState<HeartStatus>('idle');
   const [showMenu, setShowMenu] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetail, setReportDetail] = useState('');
   const { balance, deduct } = useHeartStore();
 
   const isMyProfile = profileId === MOCK_CURRENT_USER.id;
@@ -75,6 +88,14 @@ export default function ProfileDetailPage() {
 
   const handleReport = () => {
     setShowMenu(false);
+    setReportReason('');
+    setReportDetail('');
+    setShowReport(true);
+  };
+
+  const handleReportSubmit = () => {
+    if (!reportReason) return;
+    setShowReport(false);
     toast.success('신고가 접수되었어요', {
       description: '검토 후 적절한 조치를 취할게요',
     });
@@ -225,12 +246,28 @@ export default function ProfileDetailPage() {
             label="지역"
             value={visibleRegion || '-'}
           />
+          {(profile.height || profile.weight) && (
+            <InfoRow
+              icon={<Ruler size={16} />}
+              label="신체"
+              value={[
+                profile.height ? `${profile.height}cm` : null,
+                profile.weight ? `${profile.weight}kg` : null,
+              ]
+                .filter(Boolean)
+                .join(' · ')}
+            />
+          )}
           <InfoRow
             icon={<Clock size={16} />}
             label="활동 시간"
-            value={profile.activeTime || '-'}
+            value={
+              profile.activeTime.length > 0
+                ? profile.activeTime.join(', ')
+                : '-'
+            }
             action={
-              isMyProfile && !profile.activeTime
+              isMyProfile && profile.activeTime.length === 0
                 ? () =>
                     toast(
                       '프로필 편집에서 설정할 수 있어요 (준비 중)',
@@ -330,6 +367,52 @@ export default function ProfileDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* 신고 다이얼로그 */}
+      <Dialog open={showReport} onOpenChange={setShowReport}>
+        <DialogContent
+          title="신고하기"
+          description={`${profile?.nickname}님을 신고하는 이유를 선택해주세요`}
+        >
+          <div className="flex flex-col gap-2">
+            {REPORT_REASONS.map((reason) => (
+              <button
+                key={reason.id}
+                onClick={() => setReportReason(reason.id)}
+                className={`rounded-xl border px-4 py-3 text-left text-sm transition-colors ${
+                  reportReason === reason.id
+                    ? 'border-gold bg-gold/5 text-gold'
+                    : 'border-cream/8 text-cream/60 hover:border-cream/15'
+                }`}
+              >
+                {reason.label}
+              </button>
+            ))}
+          </div>
+
+          {reportReason === 'OTHER' && (
+            <textarea
+              value={reportDetail}
+              onChange={(e) => setReportDetail(e.target.value)}
+              maxLength={200}
+              rows={3}
+              placeholder="신고 사유를 자세히 알려주세요"
+              className="mt-3 w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+            />
+          )}
+
+          <button
+            onClick={handleReportSubmit}
+            disabled={
+              !reportReason ||
+              (reportReason === 'OTHER' && !reportDetail.trim())
+            }
+            className="mt-4 w-full rounded-xl bg-red-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500/90 active:scale-[0.98] disabled:bg-cream/5 disabled:text-cream/20"
+          >
+            신고 접수하기
+          </button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -17,6 +17,11 @@ import {
   X,
   ImagePlus,
   Star,
+  MessageSquareText,
+  Ruler,
+  Clock,
+  Hash,
+  Plus,
 } from 'lucide-react';
 import {
   DndContext,
@@ -74,6 +79,29 @@ const REGIONS = [
   '제주',
 ];
 
+const INTEREST_SUGGESTIONS = [
+  '음악',
+  '영화',
+  '독서',
+  '산책',
+  '요리',
+  '카페',
+  '사진',
+  '여행',
+  '운동',
+  '게임',
+  '그림',
+  '등산',
+  '자전거',
+  '넷플릭스',
+  '디저트',
+  '코딩',
+  '고양이',
+  '강아지',
+  '명상',
+  '요가',
+];
+
 const STEPS = [
   { label: '본인인증', done: true },
   { label: '프로필 설정', done: false },
@@ -98,9 +126,25 @@ export default function ProfileSetupPage() {
     region: 'public',
     age: 'public',
   });
+  const [bio, setBio] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [activeTimes, setActiveTimes] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [newInterest, setNewInterest] = useState('');
   const [sensitiveAgreed, setSensitiveAgreed] = useState(false);
 
   const MAX_PHOTOS = 6;
+  const ACTIVE_TIMES = [
+    '아침',
+    '오전',
+    '점심',
+    '오후',
+    '저녁',
+    '밤',
+    '새벽',
+  ];
+  const MAX_INTERESTS = 10;
 
   const handlePhotoAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -145,6 +189,22 @@ export default function ProfileSetupPage() {
     );
   };
 
+  const addInterest = (value: string) => {
+    const trimmed = value.trim();
+    if (
+      trimmed &&
+      !interests.includes(trimmed) &&
+      interests.length < MAX_INTERESTS
+    ) {
+      setInterests((prev) => [...prev, trimmed]);
+    }
+    setNewInterest('');
+  };
+
+  const removeInterest = (value: string) => {
+    setInterests((prev) => prev.filter((i) => i !== value));
+  };
+
   const toggleVisibility = (field: 'region' | 'age') => {
     setVisibility((prev) => ({
       ...prev,
@@ -158,6 +218,7 @@ export default function ProfileSetupPage() {
     identity &&
     (identity !== 'OTHER' || otherIdentity.trim().length > 0);
   const canProceed =
+    photos.length >= 1 &&
     nicknameValid &&
     identityValid &&
     goals.length > 0 &&
@@ -223,7 +284,7 @@ export default function ProfileSetupPage() {
             </h2>
           </div>
           <p className="mb-4 text-xs text-cream/50">
-            최대 {MAX_PHOTOS}장까지 등록할 수 있어요 (선택)
+            최소 1장 필수 · 최대 {MAX_PHOTOS}장까지 등록할 수 있어요
           </p>
 
           <input
@@ -293,6 +354,81 @@ export default function ProfileSetupPage() {
                 : undefined
             }
           />
+        </section>
+
+        {/* 자기소개 */}
+        <section>
+          <div className="mb-1 flex items-center gap-1.5">
+            <MessageSquareText size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              자기소개
+            </h2>
+          </div>
+          <p className="mb-4 text-xs text-cream/50">
+            나를 소개하는 한 줄 (선택)
+          </p>
+          <div className="relative">
+            <textarea
+              placeholder="자유롭게 소개해주세요"
+              maxLength={100}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              className="w-full resize-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none"
+            />
+            <span className="absolute right-3 bottom-2 text-[10px] text-cream/30">
+              {bio.length}/100
+            </span>
+          </div>
+        </section>
+
+        {/* 키/몸무게 */}
+        <section>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Ruler size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              신체 정보
+            </h2>
+          </div>
+          <p className="mb-4 text-xs text-cream/50">
+            선택 사항이에요 · 비공개 가능
+          </p>
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs text-cream/40">
+                키
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="-"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-12 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/40">
+                  cm
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs text-cream/40">
+                몸무게
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="-"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full appearance-none rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-12 text-sm text-cream placeholder:text-cream/30 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/40">
+                  kg
+                </span>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* 정체성 선택 */}
@@ -388,6 +524,114 @@ export default function ProfileSetupPage() {
               />
             ))}
           </PillCarousel>
+        </section>
+
+        {/* 활동 시간 */}
+        <section className="-mx-6">
+          <div className="mb-1 flex items-center gap-1.5 px-6">
+            <Clock size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              활동 시간
+            </h2>
+          </div>
+          <p className="mb-4 px-6 text-xs text-cream/50">
+            주로 활동하는 시간대를 선택해주세요 (복수 선택 가능, 선택)
+          </p>
+          <PillCarousel>
+            {ACTIVE_TIMES.map((time) => (
+              <Pill
+                key={time}
+                label={time}
+                variant="identity"
+                selected={activeTimes.includes(time)}
+                onPress={() =>
+                  setActiveTimes((prev) =>
+                    prev.includes(time)
+                      ? prev.filter((t) => t !== time)
+                      : [...prev, time],
+                  )
+                }
+              />
+            ))}
+          </PillCarousel>
+        </section>
+
+        {/* 관심사 */}
+        <section>
+          <div className="mb-1 flex items-center gap-1.5">
+            <Hash size={16} className="text-gold/60" />
+            <h2 className="text-base font-semibold text-cream">
+              관심사
+            </h2>
+          </div>
+          <p className="mb-4 text-xs text-cream/50">
+            관심사를 입력해주세요 (선택, 최대 {MAX_INTERESTS}개)
+          </p>
+          {interests.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {interests.map((interest) => (
+                <span
+                  key={interest}
+                  className="flex items-center gap-1 rounded-full bg-gold/10 px-3 py-1.5 text-xs font-medium text-gold"
+                >
+                  #{interest}
+                  <button
+                    onClick={() => removeInterest(interest)}
+                    className="ml-0.5 transition-colors hover:text-red-400"
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          {interests.length < MAX_INTERESTS && (
+            <div className="flex gap-2">
+              <Input
+                placeholder="예: 음악, 영화, 요리"
+                value={newInterest}
+                onChange={(e) => setNewInterest(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'Enter' &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    addInterest(newInterest);
+                  }
+                }}
+              />
+              <button
+                onClick={() => addInterest(newInterest)}
+                disabled={!newInterest.trim()}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gold/10 text-gold transition-colors hover:bg-gold/20 disabled:opacity-30"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+          )}
+          {interests.length < MAX_INTERESTS && (
+            <div className="mt-3">
+              <p className="mb-2 text-[10px] text-cream/20">
+                추천 관심사
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {INTEREST_SUGGESTIONS.filter(
+                  (s) => !interests.includes(s),
+                )
+                  .slice(0, 12)
+                  .map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => addInterest(tag)}
+                      className="rounded-full border border-cream/8 px-2.5 py-1 text-[11px] text-cream/35 transition-colors hover:border-gold/20 hover:text-gold/60"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
         </section>
 
         {/* 노출 범위 */}

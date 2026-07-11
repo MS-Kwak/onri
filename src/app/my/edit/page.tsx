@@ -18,6 +18,7 @@ import {
   ImagePlus,
   Star,
   MessageSquareText,
+  Ruler,
   Clock,
   Hash,
   Plus,
@@ -119,7 +120,15 @@ export default function ProfileEditPage() {
     ...profile.lookingFor,
   ]);
   const [regions, setRegions] = useState<string[]>([profile.region]);
-  const [activeTime, setActiveTime] = useState(profile.activeTime);
+  const [height, setHeight] = useState(
+    profile.height?.toString() ?? '',
+  );
+  const [weight, setWeight] = useState(
+    profile.weight?.toString() ?? '',
+  );
+  const [activeTimes, setActiveTimes] = useState<string[]>([
+    ...profile.activeTime,
+  ]);
   const [interests, setInterests] = useState<string[]>([
     ...profile.interests,
   ]);
@@ -200,6 +209,7 @@ export default function ProfileEditPage() {
   const nicknameValid =
     nickname.trim().length >= 2 && nickname.trim().length <= 10;
   const canSave =
+    photos.length >= 1 &&
     nicknameValid &&
     identity &&
     goals.length > 0 &&
@@ -233,7 +243,7 @@ export default function ProfileEditPage() {
         <Section
           icon={<Camera size={16} />}
           title="프로필 사진"
-          desc={`최대 ${MAX_PHOTOS}장 · 드래그로 순서 변경`}
+          desc={`최소 1장 필수 · 최대 ${MAX_PHOTOS}장 · 드래그로 순서 변경`}
         >
           <input
             ref={fileInputRef}
@@ -314,6 +324,50 @@ export default function ProfileEditPage() {
           <p className="mt-1 text-right text-[10px] text-cream/20">
             {bio.length}/100
           </p>
+        </Section>
+
+        {/* 키 / 몸무게 */}
+        <Section
+          icon={<Ruler size={16} />}
+          title="신체 정보"
+          desc="선택 사항이에요 · 비공개 가능"
+        >
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs text-cream/40">
+                키
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="-"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-10 text-sm text-cream placeholder:text-cream/20 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/25">
+                  cm
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <label className="mb-1.5 block text-xs text-cream/40">
+                몸무게
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  placeholder="-"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full rounded-xl border border-navy-light bg-navy-light px-4 py-3 pr-10 text-sm text-cream placeholder:text-cream/20 focus:border-gold-soft/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                />
+                <span className="absolute top-1/2 right-4 -translate-y-1/2 text-xs text-cream/25">
+                  kg
+                </span>
+              </div>
+            </div>
+          </div>
         </Section>
 
         {/* 정체성 */}
@@ -408,7 +462,7 @@ export default function ProfileEditPage() {
           <Section
             icon={<Clock size={16} />}
             title="활동 시간"
-            desc="주로 접속하는 시간대"
+            desc="주로 접속하는 시간대 (복수 선택 가능)"
             className="px-6"
           >
             <div />
@@ -419,9 +473,13 @@ export default function ProfileEditPage() {
                 key={time}
                 label={time}
                 variant="identity"
-                selected={activeTime === time}
+                selected={activeTimes.includes(time)}
                 onPress={() =>
-                  setActiveTime(activeTime === time ? '' : time)
+                  setActiveTimes((prev) =>
+                    prev.includes(time)
+                      ? prev.filter((t) => t !== time)
+                      : [...prev, time],
+                  )
                 }
               />
             ))}
