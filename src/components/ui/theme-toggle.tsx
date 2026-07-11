@@ -5,15 +5,13 @@ import { useTheme } from '@/components/theme-provider';
 import { twMerge } from 'tailwind-merge';
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const { theme, setTheme } = useTheme();
-
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { setTheme, isDark, mounted } = useTheme();
 
   const toggle = () => setTheme(isDark ? 'light' : 'dark');
+
+  if (!mounted) {
+    return <div className="h-8 w-8" />;
+  }
 
   return (
     <button

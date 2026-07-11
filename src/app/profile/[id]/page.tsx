@@ -35,6 +35,7 @@ import {
   HEART_COST,
 } from '@/lib/constants';
 import { useHeartStore } from '@/store';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type HeartStatus = 'idle' | 'sending' | 'sent';
 
@@ -168,40 +169,43 @@ export default function ProfileDetailPage() {
             <ArrowLeft size={20} />
           </button>
 
-          <div className="relative">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-background/40 text-foreground backdrop-blur-sm transition-colors hover:bg-background/60"
-            >
-              <MoreVertical size={20} />
-            </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle className="bg-background/40 backdrop-blur-sm hover:bg-background/60" />
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu(!showMenu)}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-background/40 text-foreground backdrop-blur-sm transition-colors hover:bg-background/60"
+              >
+                <MoreVertical size={20} />
+              </button>
 
-            {/* 드롭다운 메뉴 */}
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowMenu(false)}
-                />
-                <div className="absolute top-12 right-0 z-50 min-w-[140px] overflow-hidden rounded-xl border border-line bg-background shadow-xl">
-                  <button
-                    onClick={handleReport}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground/70 transition-colors hover:bg-foreground/5"
-                  >
-                    <Flag size={15} />
-                    신고하기
-                  </button>
-                  <div className="mx-3 h-px bg-line" />
-                  <button
-                    onClick={handleBlock}
-                    className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-400 transition-colors hover:bg-red-400/5"
-                  >
-                    <Ban size={15} />
-                    차단하기
-                  </button>
-                </div>
-              </>
-            )}
+              {/* 드롭다운 메뉴 */}
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute top-12 right-0 z-50 min-w-[140px] overflow-hidden rounded-xl border border-line bg-background shadow-xl">
+                    <button
+                      onClick={handleReport}
+                      className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-foreground/70 transition-colors hover:bg-foreground/5"
+                    >
+                      <Flag size={15} />
+                      신고하기
+                    </button>
+                    <div className="mx-3 h-px bg-line" />
+                    <button
+                      onClick={handleBlock}
+                      className="flex w-full items-center gap-2.5 px-4 py-3 text-sm text-red-400 transition-colors hover:bg-red-400/5"
+                    >
+                      <Ban size={15} />
+                      차단하기
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

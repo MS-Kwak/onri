@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
 
-type Theme = "dark" | "light" | "system";
+type Theme = 'dark' | 'light' | 'system';
 
-const STORAGE_KEY = "onri-theme";
+const STORAGE_KEY = 'onri-theme';
 
-function getSystemTheme(): "dark" | "light" {
-  if (typeof window === "undefined") return "dark";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+function getSystemTheme(): 'dark' | 'light' {
+  if (typeof window === 'undefined') return 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
-  return (localStorage.getItem(STORAGE_KEY) as Theme) || "system";
+  if (typeof window === 'undefined') return 'system';
+  return (localStorage.getItem(STORAGE_KEY) as Theme) || 'dark';
 }
 
 function applyTheme(theme: Theme) {
-  const resolved = theme === "system" ? getSystemTheme() : theme;
-  document.documentElement.classList.remove("dark", "light");
+  const resolved = theme === 'system' ? getSystemTheme() : theme;
+  document.documentElement.classList.remove('dark', 'light');
   document.documentElement.classList.add(resolved);
 }
 
@@ -44,29 +44,50 @@ function getSnapshot(): Theme {
 }
 
 function getServerSnapshot(): Theme {
-  return "system";
+  return 'system';
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+export function ThemeProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const theme = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
 
   useEffect(() => {
-    if (theme !== "system") return;
-    const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => applyTheme("system");
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
+    if (theme !== 'system') return;
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = () => applyTheme('system');
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, [theme]);
 
   return <>{children}</>;
 }
 
+const noopSubscribe = () => () => {};
+const getMounted = () => true;
+const getServerMounted = () => false;
+
 export function useTheme() {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const theme = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    getMounted,
+    getServerMounted,
+  );
 
   const setTheme = useCallback((t: Theme) => {
     localStorage.setItem(STORAGE_KEY, t);
@@ -74,5 +95,12 @@ export function useTheme() {
     emitChange();
   }, []);
 
-  return { theme, setTheme };
+  const isDark =
+    mounted &&
+    (theme === 'dark' ||
+      (theme === 'system' &&
+        typeof window !== 'undefined' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches));
+
+  return { theme, setTheme, isDark, mounted };
 }

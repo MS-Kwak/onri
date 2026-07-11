@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import * as Switch from '@radix-ui/react-switch';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type NotificationSetting = {
   id: string;
@@ -80,17 +81,20 @@ export default function NotificationsPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-40 bg-background">
-        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <Bell size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-foreground">
-            알림 설정
-          </h1>
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <Bell size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              알림 설정
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
         <div className="h-px bg-line" />
       </header>

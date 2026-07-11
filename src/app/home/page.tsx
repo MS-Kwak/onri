@@ -42,12 +42,7 @@ const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 export default function HomePage() {
   const router = useRouter();
   const { balance } = useHeartStore();
-  const { theme } = useTheme();
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { isDark } = useTheme();
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<

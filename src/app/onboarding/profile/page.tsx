@@ -44,6 +44,7 @@ import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import type { Identity, RelationGoal, Visibility } from '@/types';
 import {
   IDENTITY_LABELS,
@@ -231,48 +232,51 @@ export default function ProfileSetupPage() {
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">
-      {/* 고정 헤더 + 프로그레스 */}
-      <div className="sticky top-0 z-40 bg-background">
-        <header className="flex items-center gap-3 px-5 pt-14 pb-2">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-lg font-semibold text-foreground">
-            프로필 설정
-          </h1>
-        </header>
-
-        {/* 프로그레스 바 (단계 라벨 포함) */}
-        <div className="px-6 pt-2 pb-4">
-          <div className="flex gap-1.5">
-            {STEPS.map((step, i) => (
-              <div
-                key={step.label}
-                className="flex-1 flex flex-col items-center gap-1.5"
-              >
-                <div
-                  className={`h-1 w-full rounded-full ${
-                    i <= CURRENT_STEP ? 'bg-gold' : 'bg-surface'
-                  }`}
-                />
-                <span
-                  className={`text-[10px] ${
-                    i <= CURRENT_STEP
-                      ? 'text-gold'
-                      : 'text-foreground-soft'
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-            ))}
+      {/* 고정 헤더 */}
+      <header className="sticky top-0 z-40 bg-background">
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <UserRound size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              프로필 설정
+            </h1>
           </div>
+          <ThemeToggle />
         </div>
-
         <div className="h-px bg-line" />
+      </header>
+
+      {/* 프로그레스 바 */}
+      <div className="px-6 pt-4 pb-4">
+        <div className="flex gap-1.5">
+          {STEPS.map((step, i) => (
+            <div
+              key={step.label}
+              className="flex-1 flex flex-col items-center gap-1.5"
+            >
+              <div
+                className={`h-1 w-full rounded-full ${
+                  i <= CURRENT_STEP ? 'bg-gold' : 'bg-surface'
+                }`}
+              />
+              <span
+                className={`text-[10px] ${
+                  i <= CURRENT_STEP
+                    ? 'text-gold'
+                    : 'text-foreground-soft'
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* 스크롤 컨텐츠 */}

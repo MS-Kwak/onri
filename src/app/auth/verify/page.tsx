@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const CARRIERS = [
   'SKT',
@@ -73,42 +74,46 @@ export default function VerifyPage() {
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">
-      {/* 고정 헤더 + 프로그레스 */}
-      <div className="sticky top-0 z-40 bg-background">
-        <header className="flex items-center gap-3 px-5 pt-14 pb-2">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-lg font-semibold text-foreground">
-            본인인증
-          </h1>
-        </header>
+      {/* 고정 헤더 */}
+      <header className="sticky top-0 z-40 bg-background">
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <ShieldCheck size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              본인인증
+            </h1>
+          </div>
+          <ThemeToggle />
+        </div>
+        <div className="h-px bg-line" />
+      </header>
 
-        <div className="px-6 pt-2 pb-4">
-          <div className="flex gap-1.5">
-            <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="h-1 w-full rounded-full bg-gold" />
-              <span className="text-[10px] text-gold">본인인증</span>
-            </div>
-            <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="h-1 w-full rounded-full bg-surface" />
-              <span className="text-[10px] text-foreground-soft">
-                프로필 설정
-              </span>
-            </div>
-            <div className="flex flex-1 flex-col items-center gap-1.5">
-              <div className="h-1 w-full rounded-full bg-surface" />
-              <span className="text-[10px] text-foreground-soft">
-                완료
-              </span>
-            </div>
+      {/* 프로그레스 바 */}
+      <div className="px-6 pt-4 pb-4">
+        <div className="flex gap-1.5">
+          <div className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="h-1 w-full rounded-full bg-gold" />
+            <span className="text-[10px] text-gold">본인인증</span>
+          </div>
+          <div className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="h-1 w-full rounded-full bg-surface" />
+            <span className="text-[10px] text-foreground-soft">
+              프로필 설정
+            </span>
+          </div>
+          <div className="flex flex-1 flex-col items-center gap-1.5">
+            <div className="h-1 w-full rounded-full bg-surface" />
+            <span className="text-[10px] text-foreground-soft">
+              완료
+            </span>
           </div>
         </div>
-
-        <div className="h-px bg-line" />
       </div>
 
       {/* 안내 */}

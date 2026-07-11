@@ -2,10 +2,12 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/theme-provider';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { isDark } = useTheme();
 
   const handleKakaoLogin = () => {
     router.push('/auth/verify');
@@ -20,11 +22,16 @@ export default function OnboardingPage() {
   };
 
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-between bg-background px-6 py-12">
+    <main className="relative flex min-h-dvh flex-col items-center justify-between bg-background px-6 py-12">
+      {/* 테마 전환 버튼 */}
+      <div className="absolute top-12 right-5 z-40">
+        <ThemeToggle />
+      </div>
+
       {/* 상단 여백 + 로고 영역 */}
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
         <Image
-          src="/onri-gold.svg"
+          src={isDark ? '/onri-gold.svg' : '/onri-navy.svg'}
           alt="온리 로고"
           width={80}
           height={120}
@@ -52,7 +59,7 @@ export default function OnboardingPage() {
 
         <button
           onClick={handleAppleLogin}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-base font-semibold text-ink transition-colors hover:bg-cream active:bg-cream"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-surface-secondary active:bg-surface-secondary"
         >
           Apple로 시작하기
         </button>

@@ -46,6 +46,7 @@ import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
 import { Input } from '@/components/ui/input';
 import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import type { Identity, RelationGoal, Visibility } from '@/types';
 import {
   IDENTITY_LABELS,
@@ -223,17 +224,20 @@ export default function ProfileEditPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-40 bg-background">
-        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <Pencil size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-foreground">
-            프로필 편집
-          </h1>
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <Pencil size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              프로필 편집
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
         <div className="h-px bg-line" />
       </header>

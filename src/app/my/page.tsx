@@ -17,12 +17,15 @@ import {
   HelpCircle,
   FileText,
   LogOut,
+  UserX,
   Sparkles,
   Crown,
   Check,
   Info,
   Clock,
+  AlertTriangle,
 } from 'lucide-react';
+import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
@@ -34,6 +37,15 @@ import { useHeartStore } from '@/store';
 import { ATTENDANCE_REWARD, BRAND } from '@/lib/constants';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
+
+const WITHDRAW_REASONS = [
+  { id: 'NO_MATCH', label: '마음에 드는 사람을 찾지 못했어요' },
+  { id: 'FOUND_PARTNER', label: '좋은 사람을 만났어요' },
+  { id: 'RARELY_USE', label: '잘 사용하지 않게 됐어요' },
+  { id: 'UNCOMFORTABLE', label: '불편한 경험을 했어요' },
+  { id: 'OTHER_APP', label: '다른 앱을 사용하려고요' },
+  { id: 'OTHER', label: '기타' },
+];
 
 function getMockAttendance() {
   const today = new Date().getDay();
@@ -49,6 +61,9 @@ export default function MyPage() {
 
   const [attendance, setAttendance] = useState(getMockAttendance);
   const [checkedToday, setCheckedToday] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState('');
+  const [withdrawDetail, setWithdrawDetail] = useState('');
 
   const todayIndex = useMemo(() => {
     const d = new Date().getDay();
@@ -263,10 +278,14 @@ export default function MyPage() {
                 attendance[i] || (isToday && checkedToday);
               const isFuture = i > todayIndex;
 
+              const dateObj = new Date();
+              dateObj.setDate(dateObj.getDate() + (i - todayIndex));
+              const dateNum = dateObj.getDate();
+
               return (
                 <div
                   key={day}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl py-2.5 transition-colors ${
+                  className={`flex flex-col items-center gap-1 rounded-xl py-2 transition-colors ${
                     isToday && !checkedToday
                       ? 'bg-gold/10 ring-1 ring-gold/30'
                       : checked
@@ -284,6 +303,17 @@ export default function MyPage() {
                     }`}
                   >
                     {day}
+                  </span>
+                  <span
+                    className={`text-[9px] ${
+                      isToday
+                        ? 'text-gold/70'
+                        : isFuture
+                          ? 'text-foreground-dim'
+                          : 'text-foreground-soft'
+                    }`}
+                  >
+                    {dateObj.getMonth() + 1}/{dateNum}
                   </span>
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${
@@ -384,13 +414,141 @@ export default function MyPage() {
           </MenuGroup>
         </section>
 
-        {/* 앱 버전 */}
-        <div className="mt-6 mb-4 text-center">
+        {/* 회원탈퇴 + 앱 버전 */}
+        <div className="mt-6 mb-4 flex flex-col items-center gap-3">
+          <button
+            onClick={() => setWithdrawOpen(true)}
+            className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] text-foreground-dim transition-colors hover:bg-foreground/5 hover:text-foreground-soft"
+          >
+            <UserX size={12} />
+            회원탈퇴
+          </button>
           <p className="text-[11px] text-foreground-dim">
             {BRAND.nameEn} v0.1.0
           </p>
         </div>
       </div>
+
+      {/* 회원탈퇴 확인 다이얼로그 */}
+      <Dialog.Root
+        open={withdrawOpen}
+        onOpenChange={(open) => {
+          setWithdrawOpen(open);
+          if (!open) {
+            setWithdrawReason('');
+            setWithdrawDetail('');
+          }
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[calc(100%-48px)] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-line bg-surface p-6 shadow-2xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+            <div className="flex flex-col items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
+                <AlertTriangle size={24} className="text-red-400" />
+              </div>
+              <Dialog.Title className="text-lg font-bold text-foreground">
+                정말 탈퇴하시겠어요?
+              </Dialog.Title>
+              <Dialog.Description className="text-center text-sm leading-relaxed text-foreground/60">
+                탈퇴 시 모든 데이터가{' '}
+                <span className="font-medium text-red-400">
+                  즉시 삭제
+                </span>
+                되며 복구할 수 없어요.
+              </Dialog.Description>
+            </div>
+
+            {/* 탈퇴 이유 */}
+            <div className="mt-5 space-y-1.5">
+              <p className="mb-2 text-xs font-medium text-foreground/50">
+                탈퇴 이유를 알려주세요
+              </p>
+              {WITHDRAW_REASONS.map((reason) => (
+                <label
+                  key={reason.id}
+                  className={`flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors ${
+                    withdrawReason === reason.id
+                      ? 'bg-gold/10 text-gold'
+                      : 'bg-surface-secondary text-foreground/70 hover:bg-surface-secondary/80'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="withdraw-reason"
+                    value={reason.id}
+                    checked={withdrawReason === reason.id}
+                    onChange={(e) => {
+                      setWithdrawReason(e.target.value);
+                      if (e.target.value !== 'OTHER')
+                        setWithdrawDetail('');
+                    }}
+                    className="sr-only"
+                  />
+                  <div
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
+                      withdrawReason === reason.id
+                        ? 'border-gold bg-gold'
+                        : 'border-foreground/20'
+                    }`}
+                  >
+                    {withdrawReason === reason.id && (
+                      <Check size={10} className="text-ink" />
+                    )}
+                  </div>
+                  {reason.label}
+                </label>
+              ))}
+
+              {withdrawReason === 'OTHER' && (
+                <textarea
+                  value={withdrawDetail}
+                  onChange={(e) => setWithdrawDetail(e.target.value)}
+                  placeholder="이유를 알려주세요"
+                  maxLength={200}
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-xl border border-foreground/15 bg-surface px-3.5 py-2.5 text-sm text-foreground outline-none placeholder:text-foreground-dim focus:border-gold/50"
+                />
+              )}
+            </div>
+
+            <div className="mt-5 flex gap-3">
+              <button
+                onClick={() => {
+                  if (!withdrawReason) {
+                    toast.error('탈퇴 이유를 선택해주세요');
+                    return;
+                  }
+                  if (
+                    withdrawReason === 'OTHER' &&
+                    !withdrawDetail.trim()
+                  ) {
+                    toast.error('기타 이유를 입력해주세요');
+                    return;
+                  }
+                  setWithdrawOpen(false);
+                  setWithdrawReason('');
+                  setWithdrawDetail('');
+                  toast.success('회원탈퇴가 완료되었어요', {
+                    description:
+                      '그동안 온리를 이용해주셔서 감사합니다.',
+                  });
+                  router.push('/');
+                }}
+                className="flex-1 rounded-xl border border-red-500/30 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/5"
+              >
+                탈퇴하기
+              </button>
+              <button
+                onClick={() => setWithdrawOpen(false)}
+                className="flex-1 rounded-xl bg-gold py-3 text-sm font-semibold text-ink transition-colors hover:bg-gold-soft"
+              >
+                계속 이용하기
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       <BottomTab />
     </div>

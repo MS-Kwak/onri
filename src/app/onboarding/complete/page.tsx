@@ -2,16 +2,44 @@
 
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Heart } from 'lucide-react';
+import {
+  CheckCircle,
+  Heart,
+  ArrowLeft,
+  PartyPopper,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/theme-provider';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 export default function CompletePage() {
   const router = useRouter();
+  const { isDark } = useTheme();
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">
+      {/* 헤더 */}
+      <header className="sticky top-0 z-40 bg-background">
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <PartyPopper size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              완료
+            </h1>
+          </div>
+          <ThemeToggle />
+        </div>
+        <div className="h-px bg-line" />
+      </header>
+
       {/* 프로그레스 바 (3단계 완료) */}
-      <div className="px-6 pt-14 pb-4">
+      <div className="px-6 pt-4 pb-4">
         <div className="flex gap-1.5">
           {['본인인증', '프로필 설정', '완료'].map((label) => (
             <div
@@ -27,14 +55,12 @@ export default function CompletePage() {
 
       {/* 콘텐츠 */}
       <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6">
-        {/* 체크 아이콘 */}
         <div className="relative">
           <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gold/10">
             <CheckCircle size={48} className="text-gold" />
           </div>
         </div>
 
-        {/* 환영 메시지 */}
         <div className="flex flex-col items-center gap-3 text-center">
           <h1 className="text-2xl font-bold text-foreground">
             가입이 완료되었어요
@@ -46,16 +72,14 @@ export default function CompletePage() {
           </p>
         </div>
 
-        {/* 로고 */}
         <Image
-          src="/onri-gold.svg"
+          src={isDark ? '/onri-gold.svg' : '/onri-navy.svg'}
           alt="온리 로고"
           width={48}
           height={72}
           className="opacity-40"
         />
 
-        {/* 무료 하트 안내 */}
         <div className="flex items-center gap-2 rounded-xl bg-surface px-5 py-3">
           <Heart size={16} className="fill-gold text-gold" />
           <span className="text-sm text-foreground/80">

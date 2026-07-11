@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Ban, UserX, ShieldOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MOCK_PROFILES } from '@/data/mock-profiles';
 
 const MOCK_BLOCKED = MOCK_PROFILES.slice(2, 4).map((p) => ({
@@ -26,17 +27,20 @@ export default function BlockedPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-40 bg-background">
-        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <Ban size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-foreground">
-            차단 목록
-          </h1>
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <Ban size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              차단 목록
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
         <div className="h-px bg-line" />
       </header>

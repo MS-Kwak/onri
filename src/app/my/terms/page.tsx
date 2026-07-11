@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, FileText, Shield } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type Tab = 'terms' | 'privacy';
 
@@ -13,17 +14,20 @@ export default function TermsPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="sticky top-0 z-40 bg-background">
-        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <FileText size={18} className="text-gold" />
-          <h1 className="text-lg font-bold text-foreground">
-            약관 및 정책
-          </h1>
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <FileText size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              약관 및 정책
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
 
         {/* 탭 */}
@@ -240,11 +244,16 @@ function TermsContent() {
 
       <SectionTitle>제10조 (회원 탈퇴)</SectionTitle>
       <Paragraph>
-        ① 이용자는 언제든 서비스 내에서 회원 탈퇴를 요청할 수
-        있습니다.
-        <br />② 탈퇴 시 이용자의 프로필, 채팅 내역, 시그널 기록 등
-        모든 데이터는 즉시 삭제되며, 이는 복구할 수 없습니다.
+        ① 이용자는 언제든 서비스 내 &quot;마이페이지 &gt; 계정 &gt;
+        회원탈퇴&quot;를 통해 탈퇴를 요청할 수 있습니다.
+        <br />② 탈퇴 시 이용자의 프로필, 사진, 채팅 내역, 시그널 기록,
+        출석체크 기록 등 모든 데이터는 즉시 삭제되며, 이는 복구할 수
+        없습니다.
         <br />③ 미사용 하트는 탈퇴 시 소멸되며 환불되지 않습니다.
+        <br />④ 탈퇴 후 동일한 본인인증 정보로 재가입할 수 있으나,
+        이전 데이터는 복원되지 않습니다.
+        <br />⑤ 관련 법령에 따라 보존이 필요한 정보(제4조 참조)는 해당
+        기간 동안 안전하게 보관 후 파기합니다.
       </Paragraph>
 
       <SectionTitle>제11조 (면책)</SectionTitle>

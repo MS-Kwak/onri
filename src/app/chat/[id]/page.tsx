@@ -26,6 +26,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { MOCK_CHAT_ROOMS, MOCK_MESSAGES } from '@/data/mock-chats';
 import { MOCK_PROFILES } from '@/data/mock-profiles';
 import type { Message } from '@/types';
@@ -283,6 +284,8 @@ export default function ChatRoomPage({
                 </Dialog.Content>
               </Dialog.Portal>
             </Dialog.Root>
+
+            <ThemeToggle />
           </div>
         </div>
 

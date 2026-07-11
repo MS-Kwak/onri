@@ -17,6 +17,7 @@ import {
   Send,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 type Step =
   | 'intro'
@@ -57,16 +58,20 @@ export default function SelfieVerifyPage() {
     <div className="flex min-h-dvh flex-col bg-background">
       {/* 헤더 */}
       <header className="sticky top-0 z-40 bg-background">
-        <div className="flex items-center gap-3 px-5 pt-12 pb-3">
-          <button
-            onClick={() => router.back()}
-            className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <h1 className="text-lg font-semibold text-foreground">
-            셀카 인증
-          </h1>
+        <div className="flex items-center justify-between px-5 pt-12 pb-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => router.back()}
+              className="rounded-lg p-1.5 text-foreground/70 transition-colors hover:bg-foreground/10 hover:text-foreground"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <Camera size={18} className="text-gold" />
+            <h1 className="text-lg font-bold text-foreground">
+              셀카 인증
+            </h1>
+          </div>
+          <ThemeToggle />
         </div>
         <div className="h-px bg-line" />
       </header>
@@ -128,7 +133,6 @@ export default function SelfieVerifyPage() {
                 setTimeout(() => fileInputRef.current?.click(), 100);
               }}
             >
-              <Camera size={18} />
               셀카 촬영하기
             </Button>
           </div>
