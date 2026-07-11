@@ -20,7 +20,7 @@ export const RELATION_GOAL_LABELS: Record<string, string> = {
 };
 
 export const HEART_COST = {
-  SIGNAL: 1,
+  SIGNAL: 3,
 } as const;
 
 export const HEART_REWARD = {

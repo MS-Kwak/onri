@@ -177,6 +177,7 @@ export default function SignalPage() {
             </button>
           </div>
         </div>
+        <div className="h-px bg-navy-light" />
       </header>
 
       {/* 컨텐츠 */}

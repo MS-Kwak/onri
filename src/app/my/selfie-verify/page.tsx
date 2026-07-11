@@ -56,16 +56,19 @@ export default function SelfieVerifyPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-navy">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 flex items-center gap-3 bg-navy px-5 pt-12 pb-3">
-        <button
-          onClick={() => router.back()}
-          className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <h1 className="text-lg font-semibold text-cream">
-          셀카 인증
-        </h1>
+      <header className="sticky top-0 z-40 bg-navy">
+        <div className="flex items-center gap-3 px-5 pt-12 pb-3">
+          <button
+            onClick={() => router.back()}
+            className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-lg font-semibold text-cream">
+            셀카 인증
+          </h1>
+        </div>
+        <div className="h-px bg-navy-light" />
       </header>
 
       <input

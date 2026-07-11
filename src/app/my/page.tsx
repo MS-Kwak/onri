@@ -6,7 +6,7 @@ import {
   ArrowLeft,
   User,
   Heart,
-  Coins,
+  HeartPlus,
   CalendarCheck,
   Gift,
   ChevronRight,
@@ -128,8 +128,8 @@ export default function MyPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-navy pb-20">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-navy px-5 pt-12 pb-2">
-        <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-40 bg-navy">
+        <div className="flex items-center gap-2 px-5 pt-12 pb-3">
           <button
             onClick={() => router.back()}
             className="rounded-lg p-1.5 text-cream/70 transition-colors hover:bg-cream/10 hover:text-cream"
@@ -139,6 +139,7 @@ export default function MyPage() {
           <User size={18} className="text-gold" />
           <h1 className="text-lg font-bold text-cream">마이페이지</h1>
         </div>
+        <div className="h-px bg-navy-light" />
       </header>
 
       <input
@@ -200,7 +201,7 @@ export default function MyPage() {
 
           <div className="mt-4 flex gap-2">
             <button
-              onClick={() => toast('프로필 편집 (준비 중)')}
+              onClick={() => router.push('/my/edit')}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-cream/5 py-2.5 text-xs font-medium text-cream/60 transition-colors hover:bg-cream/8"
             >
               <Pencil size={13} />
@@ -230,10 +231,10 @@ export default function MyPage() {
             </div>
           </div>
           <button
-            onClick={() => toast('하트 충전 (준비 중)')}
+            onClick={() => router.push('/my/hearts')}
             className="flex items-center gap-1.5 rounded-xl bg-gold px-4 py-2.5 text-xs font-semibold text-navy transition-colors hover:bg-gold/90 active:scale-95"
           >
-            <Coins size={14} />
+            <HeartPlus size={14} />
             충전하기
           </button>
         </section>

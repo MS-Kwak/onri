@@ -64,7 +64,7 @@ export default function ProfileDetailPage() {
     if (success) {
       setHeartStatus('sent');
       toast.success(`${profile?.nickname}님에게 시그널을 보냈어요`, {
-        description: '하트 1개를 사용했어요',
+        description: '하트 3개를 사용했어요',
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
     } else {
