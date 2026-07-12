@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   User,
@@ -53,7 +53,15 @@ function getMockAttendance() {
   return WEEKDAYS.map((_, i) => i < adjustedToday);
 }
 
-export default function MyPage() {
+export default function MyPageWrapper() {
+  return (
+    <Suspense>
+      <MyPage />
+    </Suspense>
+  );
+}
+
+function MyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { balance, add } = useHeartStore();
