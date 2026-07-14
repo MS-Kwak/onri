@@ -69,6 +69,7 @@ function MyPage() {
 
   const [attendance, setAttendance] = useState(getMockAttendance);
   const [checkedToday, setCheckedToday] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState('');
   const [withdrawDetail, setWithdrawDetail] = useState('');
@@ -414,10 +415,7 @@ function MyPage() {
               icon={<LogOut size={17} />}
               label="로그아웃"
               danger
-              onClick={() => {
-                toast('로그아웃 되었어요');
-                router.push('/');
-              }}
+              onClick={() => setLogoutOpen(true)}
             />
           </MenuGroup>
         </section>
@@ -436,6 +434,45 @@ function MyPage() {
           </p>
         </div>
       </div>
+
+      {/* 로그아웃 확인 다이얼로그 */}
+      <Dialog.Root open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[min(340px,90vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 shadow-xl">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10">
+                <LogOut size={22} className="text-red-400" />
+              </div>
+              <Dialog.Title className="text-lg font-bold text-foreground">
+                로그아웃
+              </Dialog.Title>
+              <Dialog.Description className="text-sm text-foreground-soft">
+                정말 로그아웃 하시겠어요?
+              </Dialog.Description>
+            </div>
+            <div className="mt-6 flex gap-3">
+              <Dialog.Close asChild>
+                <button className="flex-1 rounded-xl bg-gold py-3 text-sm font-semibold text-ink transition-colors hover:bg-gold-soft">
+                  취소
+                </button>
+              </Dialog.Close>
+              <button
+                onClick={async () => {
+                  const { createClient } =
+                    await import('@/lib/supabase');
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  router.replace('/');
+                }}
+                className="flex-1 rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-colors hover:bg-red-500/20"
+              >
+                로그아웃
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* 회원탈퇴 확인 다이얼로그 */}
       <Dialog.Root

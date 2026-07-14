@@ -237,11 +237,17 @@ CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 DECLARE
   _signup_bonus CONSTANT int := 10;
+  _nickname text;
 BEGIN
+  _nickname := COALESCE(
+    NEW.raw_user_meta_data->>'nickname',
+    '사용자_' || substr(NEW.id::text, 1, 6)
+  );
+
   INSERT INTO public.profiles (id, nickname, birth_prefix, birth_gender_digit, age, region, identity, looking_for, sensitive_agreed)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'nickname', '사용자'),
+    _nickname,
     COALESCE(NEW.raw_user_meta_data->>'birth_prefix', '000000'),
     COALESCE((NEW.raw_user_meta_data->>'birth_gender_digit')::smallint, 1),
     COALESCE((NEW.raw_user_meta_data->>'age')::smallint, 0),

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -47,6 +47,7 @@ import { Pill } from '@/components/ui/pill';
 import { Input } from '@/components/ui/input';
 import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { createClient } from '@/lib/supabase';
 import type { Identity, RelationGoal, Visibility } from '@/types';
 import {
   IDENTITY_LABELS,
@@ -112,6 +113,37 @@ export default function ProfileEditPage() {
 
   const [photos, setPhotos] = useState<string[]>([]);
   const [nickname, setNickname] = useState(profile.nickname);
+  const [nicknameDup, setNicknameDup] = useState<boolean | null>(null);
+  const [nicknameChecking, setNicknameChecking] = useState(false);
+  const nicknameDupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const originalNickname = useRef(profile.nickname);
+
+  const checkNicknameDuplicate = useCallback(async (value: string) => {
+    if (value.trim().length < 2 || value.trim() === originalNickname.current) {
+      setNicknameDup(null);
+      return;
+    }
+    setNicknameChecking(true);
+    const supabase = createClient();
+    const { data } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('nickname', value.trim())
+      .maybeSingle();
+
+    setNicknameDup(!!data);
+    setNicknameChecking(false);
+  }, []);
+
+  const handleNicknameChange = (value: string) => {
+    setNickname(value);
+    setNicknameDup(null);
+    if (nicknameDupTimer.current) clearTimeout(nicknameDupTimer.current);
+    if (value.trim().length >= 2 && value.trim() !== originalNickname.current) {
+      nicknameDupTimer.current = setTimeout(() => checkNicknameDuplicate(value), 500);
+    }
+  };
+
   const [bio, setBio] = useState(profile.bio);
   const [identity, setIdentity] = useState<Identity>(
     profile.identity,
@@ -207,8 +239,10 @@ export default function ProfileEditPage() {
     setInterests((prev) => prev.filter((t) => t !== tag));
   };
 
+  const nicknameChanged = nickname.trim() !== originalNickname.current;
   const nicknameValid =
-    nickname.trim().length >= 2 && nickname.trim().length <= 10;
+    nickname.trim().length >= 2 && nickname.trim().length <= 10 &&
+    (!nicknameChanged || nicknameDup === false);
   const canSave =
     photos.length >= 1 &&
     nicknameValid &&
@@ -305,13 +339,21 @@ export default function ProfileEditPage() {
             placeholder="닉네임을 입력해주세요"
             maxLength={10}
             value={nickname}
-            onChange={(e) => setNickname(e.target.value)}
+            onChange={(e) => handleNicknameChange(e.target.value)}
             error={
               nickname.length > 0 && nickname.trim().length < 2
                 ? '2자 이상 입력해주세요'
-                : undefined
+                : nicknameDup === true
+                  ? '이미 사용 중인 닉네임이에요'
+                  : undefined
             }
           />
+          {nicknameChecking && nickname.trim().length >= 2 && (
+            <p className="mt-1.5 text-xs text-foreground/40">중복 확인 중...</p>
+          )}
+          {nicknameDup === false && nicknameChanged && !nicknameChecking && (
+            <p className="mt-1.5 text-xs text-green-400">사용 가능한 닉네임이에요</p>
+          )}
         </Section>
 
         {/* 자기소개 */}
