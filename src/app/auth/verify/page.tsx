@@ -1,76 +1,80 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import * as Select from '@radix-ui/react-select';
-import * as Checkbox from '@radix-ui/react-checkbox';
+import * as PortOne from '@portone/browser-sdk/v2';
 import {
-  ChevronDown,
-  Check,
   ArrowLeft,
   ShieldCheck,
-  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-const CARRIERS = [
-  'SKT',
-  'KT',
-  'LG U+',
-  'SKT 알뜰폰',
-  'KT 알뜰폰',
-  'LG U+ 알뜰폰',
-];
+type VerifyState = 'idle' | 'verifying' | 'processing' | 'success' | 'error';
 
 export default function VerifyPage() {
   const router = useRouter();
+  const [state, setState] = useState<VerifyState>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [verifiedInfo, setVerifiedInfo] = useState<{
+    name: string;
+    age: number;
+  } | null>(null);
 
-  const [carrier, setCarrier] = useState('');
-  const [name, setName] = useState('');
-  const [birthPrefix, setBirthPrefix] = useState('');
-  const [genderDigit, setGenderDigit] = useState('');
-  const [phone, setPhone] = useState('');
-  const [verifyCode, setVerifyCode] = useState('');
-  const [codeSent, setCodeSent] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-  const [timer, setTimer] = useState(0);
+  const handleVerify = async () => {
+    setState('verifying');
+    setErrorMsg('');
 
-  const canRequestCode =
-    carrier &&
-    name &&
-    birthPrefix.length === 6 &&
-    genderDigit.length === 1 &&
-    phone.length >= 10;
-  const canProceed = codeSent && verifyCode.length === 6 && agreed;
+    try {
+      const identityVerificationId = `identity-${crypto.randomUUID()}`;
 
-  useEffect(() => {
-    if (timer <= 0) return;
-    const interval = setInterval(() => setTimer((t) => t - 1), 1000);
-    return () => clearInterval(interval);
-  }, [timer]);
+      const response = await PortOne.requestIdentityVerification({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
+        identityVerificationId,
+        channelKey: process.env.NEXT_PUBLIC_PORTONE_CHANNEL_KEY!,
+      });
 
-  const handleRequestCode = () => {
-    setCodeSent(true);
-    setTimer(180);
-    toast.success('인증번호가 발송되었습니다', {
-      description: '3분 내에 입력해주세요.',
-    });
+      if (!response || response.code != null) {
+        if (response?.code === 'USER_CANCELLED') {
+          setState('idle');
+          return;
+        }
+        throw new Error(response?.message || '본인인증에 실패했습니다');
+      }
+
+      setState('processing');
+
+      const verifyRes = await fetch('/api/identity-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identityVerificationId }),
+      });
+
+      const result = await verifyRes.json();
+
+      if (!verifyRes.ok) {
+        throw new Error(result.error || '인증 검증에 실패했습니다');
+      }
+
+      setVerifiedInfo({ name: result.name, age: result.age });
+      setState('success');
+      toast.success('본인인증이 완료되었어요!');
+
+      setTimeout(() => {
+        router.push('/onboarding/profile');
+      }, 1500);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '본인인증에 실패했습니다';
+      setErrorMsg(message);
+      setState('error');
+      toast.error(message);
+    }
   };
-
-  const handleResend = () => {
-    setTimer(180);
-    setVerifyCode('');
-    toast('인증번호를 다시 발송했습니다');
-  };
-
-  const handleNext = () => {
-    router.push('/onboarding/profile');
-  };
-
-  const formatTime = (s: number) =>
-    `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">
@@ -85,9 +89,7 @@ export default function VerifyPage() {
               <ArrowLeft size={20} />
             </button>
             <ShieldCheck size={18} className="text-gold" />
-            <h1 className="text-lg font-bold text-foreground">
-              본인인증
-            </h1>
+            <h1 className="text-lg font-bold text-foreground">본인인증</h1>
           </div>
           <ThemeToggle />
         </div>
@@ -109,180 +111,118 @@ export default function VerifyPage() {
           </div>
           <div className="flex flex-1 flex-col items-center gap-1.5">
             <div className="h-1 w-full rounded-full bg-surface" />
-            <span className="text-[10px] text-foreground-soft">
-              완료
-            </span>
+            <span className="text-[10px] text-foreground-soft">완료</span>
           </div>
         </div>
       </div>
 
-      {/* 안내 */}
-      <div className="flex items-start gap-2.5 px-6 pt-6 pb-6">
-        <ShieldCheck
-          size={18}
-          className="mt-0.5 shrink-0 text-gold"
-        />
-        <p className="text-sm leading-relaxed text-foreground/60">
-          만 19세 이상만 가입할 수 있습니다.
-          <br />
-          휴대폰 본인인증이 필요합니다.
-        </p>
-      </div>
-
-      {/* 폼 */}
-      <div className="flex flex-1 flex-col gap-4 px-6">
-        {/* 통신사 선택 (Radix Select) */}
-        <Select.Root value={carrier} onValueChange={setCarrier}>
-          <Select.Trigger className="flex w-full items-center justify-between rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none transition-colors data-placeholder:text-gray hover:border-gold-soft/50 focus:border-gold-soft">
-            <Select.Value placeholder="통신사 선택" />
-            <Select.Icon>
-              <ChevronDown size={16} className="text-gray" />
-            </Select.Icon>
-          </Select.Trigger>
-
-          <Select.Portal>
-            <Select.Content
-              className="overflow-hidden rounded-xl border border-line bg-surface shadow-xl"
-              position="popper"
-              sideOffset={4}
-            >
-              <Select.Viewport className="p-1.5">
-                {CARRIERS.map((c) => (
-                  <Select.Item
-                    key={c}
-                    value={c}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2.5 text-sm text-foreground outline-none transition-colors data-highlighted:bg-gold/10 data-highlighted:text-gold"
-                  >
-                    <Select.ItemText>{c}</Select.ItemText>
-                    <Select.ItemIndicator>
-                      <Check size={14} className="text-gold" />
-                    </Select.ItemIndicator>
-                  </Select.Item>
-                ))}
-              </Select.Viewport>
-            </Select.Content>
-          </Select.Portal>
-        </Select.Root>
-
-        {/* 이름 */}
-        <input
-          type="text"
-          placeholder="이름"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
-        />
-
-        {/* 주민번호 */}
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="생년월일 6자리"
-            maxLength={6}
-            value={birthPrefix}
-            onChange={(e) =>
-              setBirthPrefix(e.target.value.replace(/\D/g, ''))
-            }
-            className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
-          />
-          <span className="shrink-0 text-foreground-soft">—</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            maxLength={1}
-            placeholder="●"
-            value={genderDigit}
-            onChange={(e) =>
-              setGenderDigit(e.target.value.replace(/\D/g, ''))
-            }
-            className="w-10 shrink-0 rounded-xl border border-line bg-surface px-2 py-3 text-center text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
-          />
-          <span className="shrink-0 whitespace-nowrap text-sm text-foreground-soft">
-            ● ● ● ● ● ●
-          </span>
-        </div>
-
-        {/* 휴대폰 번호 */}
-        <input
-          type="tel"
-          inputMode="numeric"
-          placeholder="휴대폰 번호 (- 없이)"
-          value={phone}
-          onChange={(e) =>
-            setPhone(e.target.value.replace(/\D/g, ''))
-          }
-          className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
-        />
-
-        {/* 인증번호 요청 / 입력 */}
-        {!codeSent ? (
-          <Button
-            variant="primary"
-            fullWidth
-            disabled={!canRequestCode}
-            onClick={handleRequestCode}
-          >
-            인증번호 요청
-          </Button>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="인증번호 6자리"
-                maxLength={6}
-                value={verifyCode}
-                onChange={(e) =>
-                  setVerifyCode(e.target.value.replace(/\D/g, ''))
-                }
-                className="w-full rounded-xl border border-line bg-surface px-4 py-3 pr-16 text-sm text-foreground outline-none placeholder:text-gray transition-colors hover:border-gold-soft/50 focus:border-gold-soft"
-              />
-              {timer > 0 && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-gold">
-                  {formatTime(timer)}
-                </span>
-              )}
+      {/* 본문 */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6">
+        {state === 'idle' && (
+          <>
+            <div className="flex flex-col items-center gap-4 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gold/10">
+                <ShieldCheck size={36} className="text-gold" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground">
+                본인인증이 필요해요
+              </h2>
+              <p className="text-sm leading-relaxed text-foreground-soft">
+                온리는 안전한 커뮤니티를 위해
+                <br />
+                만 19세 이상만 가입할 수 있어요.
+                <br />
+                휴대폰 본인인증으로 간편하게 확인합니다.
+              </p>
             </div>
-            <button
-              onClick={handleResend}
-              className="shrink-0 rounded-xl border border-line p-3 text-gray transition-colors hover:border-gold-soft/50 hover:text-gold"
-            >
-              <RefreshCw size={16} />
-            </button>
+            <div className="w-full rounded-xl bg-surface p-4">
+              <ul className="space-y-2 text-xs text-foreground-soft">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2
+                    size={14}
+                    className="mt-0.5 shrink-0 text-gold/60"
+                  />
+                  본인 명의 휴대폰이 필요합니다
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2
+                    size={14}
+                    className="mt-0.5 shrink-0 text-gold/60"
+                  />
+                  인증 정보는 나이 확인 용도로만 사용됩니다
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2
+                    size={14}
+                    className="mt-0.5 shrink-0 text-gold/60"
+                  />
+                  이름과 전화번호는 다른 사용자에게 공개되지 않습니다
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
+
+        {state === 'verifying' && (
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 size={40} className="animate-spin text-gold" />
+            <p className="text-sm text-foreground-soft">
+              본인인증 창이 열렸어요
+            </p>
           </div>
         )}
 
-        {/* 약관 동의 (Radix Checkbox) */}
-        <div className="mt-2 flex items-start gap-2.5">
-          <Checkbox.Root
-            checked={agreed}
-            onCheckedChange={(v) => setAgreed(v === true)}
-            className="mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border border-gray/50 transition-colors data-[state=checked]:border-gold data-[state=checked]:bg-gold"
-          >
-            <Checkbox.Indicator>
-              <Check size={12} className="text-ink" />
-            </Checkbox.Indicator>
-          </Checkbox.Root>
-          <span className="cursor-pointer text-xs leading-relaxed text-foreground/50">
-            본인확인 서비스 이용약관, 개인정보 수집·이용 동의
-            (민감정보 포함)
-          </span>
-        </div>
+        {state === 'processing' && (
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 size={40} className="animate-spin text-gold" />
+            <p className="text-sm text-foreground-soft">
+              인증 결과를 확인하고 있어요...
+            </p>
+          </div>
+        )}
+
+        {state === 'success' && verifiedInfo && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10">
+              <CheckCircle2 size={36} className="text-green-400" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">
+              인증 완료!
+            </h2>
+            <p className="text-sm text-foreground-soft">
+              {verifiedInfo.name}님, 환영합니다 (만 {verifiedInfo.age}세)
+            </p>
+            <p className="text-xs text-foreground-soft">
+              프로필 설정으로 이동합니다...
+            </p>
+          </div>
+        )}
+
+        {state === 'error' && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-red-500/10">
+              <AlertTriangle size={36} className="text-red-400" />
+            </div>
+            <h2 className="text-xl font-bold text-foreground">
+              인증에 실패했어요
+            </h2>
+            <p className="text-sm text-foreground-soft">{errorMsg}</p>
+          </div>
+        )}
       </div>
 
-      {/* 하단 다음 버튼 */}
+      {/* 하단 버튼 */}
       <div className="px-6 pb-8 pt-4">
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={!canProceed}
-          onClick={handleNext}
-        >
-          다음
-        </Button>
+        {(state === 'idle' || state === 'error') && (
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            onClick={handleVerify}
+          >
+            {state === 'error' ? '다시 인증하기' : '본인인증 시작하기'}
+          </Button>
+        )}
       </div>
     </main>
   );
