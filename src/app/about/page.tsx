@@ -102,11 +102,11 @@ export default function AboutPage() {
             </div>
             <div className="flex gap-4">
               <dt className="w-24 shrink-0">사업자등록번호</dt>
-              <dd>000-00-00000</dd>
+              <dd>759-20-01657</dd>
             </div>
             <div className="flex gap-4">
-              <dt className="w-24 shrink-0">통신판매업 신고</dt>
-              <dd>제0000-서울-0000호</dd>
+              <dt className="w-24 shrink-0">업태 / 종목</dt>
+              <dd>정보통신업 / 컴퓨터 프로그래밍 서비스업</dd>
             </div>
             <div className="flex gap-4">
               <dt className="w-24 shrink-0">이메일</dt>
@@ -114,7 +114,7 @@ export default function AboutPage() {
             </div>
             <div className="flex gap-4">
               <dt className="w-24 shrink-0">주소</dt>
-              <dd>서울특별시</dd>
+              <dd>경기도 부천시 역곡로482번길 44, 402호(고강동)</dd>
             </div>
           </dl>
           <p className="mt-4 text-[10px] text-foreground/30">
