@@ -109,6 +109,10 @@ export default function AboutPage() {
               <dd>정보통신업 / 컴퓨터 프로그래밍 서비스업</dd>
             </div>
             <div className="flex gap-4">
+              <dt className="w-24 shrink-0">전화번호</dt>
+              <dd>010-3121-3220</dd>
+            </div>
+            <div className="flex gap-4">
               <dt className="w-24 shrink-0">이메일</dt>
               <dd>kkminseo@gmail.com</dd>
             </div>
