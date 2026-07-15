@@ -14,6 +14,16 @@ const PUBLIC_PATHS = [
 ];
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  const isPublic = PUBLIC_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
+
+  if (isPublic) {
+    return NextResponse.next();
+  }
+
   const supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -37,17 +47,12 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
-
-  const isPublic = PUBLIC_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(`${p}/`),
-  );
 
   console.log(
-    `[Middleware] ${pathname} | user: ${user?.id?.slice(0, 8) ?? 'none'} | public: ${isPublic}`,
+    `[Middleware] ${pathname} | user: ${user?.id?.slice(0, 8) ?? 'none'}`,
   );
 
-  if (!user && !isPublic) {
+  if (!user) {
     console.log(`[Middleware] 비인증 접근 차단 → /`);
     const url = request.nextUrl.clone();
     url.pathname = '/';
