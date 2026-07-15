@@ -6,6 +6,11 @@ const PUBLIC_PATHS = [
   '/auth/verify',
   '/auth/callback',
   '/auth/confirm',
+  '/api/identity-verify',
+  '/about',
+  '/terms',
+  '/privacy',
+  '/refund',
 ];
 
 export async function middleware(request: NextRequest) {
