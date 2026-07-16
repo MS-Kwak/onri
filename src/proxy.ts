@@ -13,7 +13,7 @@ const PUBLIC_PATHS = [
   '/refund',
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isPublic = PUBLIC_PATHS.some(
@@ -49,11 +49,11 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   console.log(
-    `[Middleware] ${pathname} | user: ${user?.id?.slice(0, 8) ?? 'none'}`,
+    `[Proxy] ${pathname} | user: ${user?.id?.slice(0, 8) ?? 'none'}`,
   );
 
   if (!user) {
-    console.log(`[Middleware] 비인증 접근 차단 → /`);
+    console.log(`[Proxy] 비인증 접근 차단 → /`);
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
