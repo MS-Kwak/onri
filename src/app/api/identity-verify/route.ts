@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { name, birthDate, phoneNumber, gender } =
+  const { name, birthDate, phoneNumber, gender, ci } =
     verification.verifiedCustomer;
 
   const birth = new Date(birthDate);
@@ -85,15 +85,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const birthStr = birthDate
+    ? new Date(birthDate).toISOString().slice(2, 10).replace(/-/g, '')
+    : '000000';
+
+  let genderDigit = 1;
+  if (gender === 'MALE') {
+    genderDigit = birthStr.startsWith('0') ? 3 : 1;
+  } else if (gender === 'FEMALE') {
+    genderDigit = birthStr.startsWith('0') ? 4 : 2;
+  }
+
   const { error: updateError } = await supabase
     .from('profiles')
     .update({
-      name,
-      birth_date: birthDate,
-      phone: phoneNumber,
-      gender: gender === 'MALE' ? 'male' : gender === 'FEMALE' ? 'female' : 'other',
+      birth_prefix: birthStr,
+      birth_gender_digit: genderDigit,
       age,
       identity_verified: true,
+      name,
+      phone: phoneNumber,
+      ...(ci ? { ci } : {}),
     })
     .eq('id', user.id);
 
