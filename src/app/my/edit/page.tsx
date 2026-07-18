@@ -300,8 +300,7 @@ export default function ProfileEditPage() {
     setInterests((prev) => prev.filter((t) => t !== tag));
   };
 
-  const nicknameChanged =
-    nickname.trim() !== originalNickname;
+  const nicknameChanged = nickname.trim() !== originalNickname;
   const nicknameValid =
     nickname.trim().length >= 2 &&
     nickname.trim().length <= 10 &&
@@ -357,6 +356,22 @@ export default function ProfileEditPage() {
       }
 
       toast.success('프로필이 저장되었어요');
+
+      try {
+        const { data: bonusData, error: bonusError } =
+          await supabase.rpc('claim_profile_complete_bonus');
+        if (!bonusError && bonusData) {
+          toast.success(
+            `프로필 완성 보상 하트 ${bonusData.bonus}개를 받았어요!`,
+            {
+              icon: <Sparkles size={16} className="text-gold" />,
+            },
+          );
+        }
+      } catch {
+        // 이미 받았거나 조건 미충족 — 무시
+      }
+
       router.back();
     } catch {
       toast.error('저장에 실패했어요');

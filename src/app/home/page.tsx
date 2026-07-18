@@ -212,12 +212,55 @@ export default function HomePage() {
     setFilterAges(new Set());
   };
 
-  const handleHeart = (id: string) => {
+  const handleHeart = async (id: string) => {
     const target = profiles.find((p) => p.id === id);
-    if (target) {
+    if (!target) return;
+
+    if (balance < 3) {
+      toast.error('하트가 부족해요', {
+        description: '출석체크나 충전으로 하트를 모아보세요',
+      });
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc('send_signal', {
+        p_to_user_id: id,
+      });
+
+      if (error) {
+        if (error.message?.includes('insufficient_hearts')) {
+          toast.error('하트가 부족해요');
+        } else if (error.message?.includes('duplicate')) {
+          toast.info('이미 시그널을 보낸 상대예요');
+        } else if (error.message?.includes('blocked_user')) {
+          toast.error('시그널을 보낼 수 없는 사용자예요');
+        } else {
+          console.error('[Signal]', error);
+          toast.error('시그널 전송에 실패했어요');
+        }
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: heartData } = await supabase
+          .from('hearts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single();
+        if (heartData) setBalance(heartData.balance);
+      }
+
       toast.success(`${target.nickname}님에게 시그널을 보냈어요`, {
+        description: '하트 3개를 사용했어요',
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
+    } catch {
+      toast.error('시그널 전송에 실패했어요');
     }
   };
 

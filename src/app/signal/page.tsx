@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Heart,
@@ -11,20 +11,29 @@ import {
   MessageCircleMore,
   Inbox,
   Send,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { MOCK_PROFILES } from '@/data/mock-profiles';
-import {
-  MOCK_RECEIVED_SIGNALS,
-  MOCK_SENT_SIGNALS,
-} from '@/data/mock-signals';
 import { useHeartStore } from '@/store';
-import type { HeartSend, HeartSendStatus } from '@/types';
+import { createClient } from '@/lib/supabase';
 
 type Tab = 'received' | 'sent';
+type SignalStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+
+type Signal = {
+  id: string;
+  fromUserId: string;
+  toUserId: string;
+  status: SignalStatus;
+  createdAt: string;
+  nickname: string;
+  age: number;
+  bio: string;
+  thumbnailUrl: string;
+};
 
 function getRelativeTime(dateStr: string): string {
   const now = Date.now();
@@ -40,21 +49,21 @@ function getRelativeTime(dateStr: string): string {
 }
 
 const STATUS_CONFIG: Record<
-  HeartSendStatus,
+  SignalStatus,
   { label: string; color: string; icon: typeof Clock }
 > = {
-  PENDING: { label: '대기중', color: 'text-gold', icon: Clock },
-  ACCEPTED: {
+  pending: { label: '대기중', color: 'text-gold', icon: Clock },
+  accepted: {
     label: '수락됨',
     color: 'text-emerald-400',
     icon: Check,
   },
-  DECLINED: {
+  declined: {
     label: '거절됨',
     color: 'text-foreground-soft',
     icon: X,
   },
-  EXPIRED: {
+  expired: {
     label: '만료됨',
     color: 'text-foreground-dim',
     icon: Clock,
@@ -63,55 +72,216 @@ const STATUS_CONFIG: Record<
 
 export default function SignalPage() {
   const router = useRouter();
-  const { balance } = useHeartStore();
+  const { balance, setBalance } = useHeartStore();
   const [activeTab, setActiveTab] = useState<Tab>('received');
-  const [receivedSignals, setReceivedSignals] = useState(
-    MOCK_RECEIVED_SIGNALS,
+  const [receivedSignals, setReceivedSignals] = useState<Signal[]>(
+    [],
   );
-  const [sentSignals] = useState(MOCK_SENT_SIGNALS);
+  const [sentSignals, setSentSignals] = useState<Signal[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSignals() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      setCurrentUserId(user.id);
+
+      const { data: heartData } = await supabase
+        .from('hearts')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+      if (heartData) setBalance(heartData.balance);
+
+      const [receivedRes, sentRes] = await Promise.all([
+        supabase
+          .from('signals')
+          .select('id, from_user_id, to_user_id, status, created_at')
+          .eq('to_user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('signals')
+          .select('id, from_user_id, to_user_id, status, created_at')
+          .eq('from_user_id', user.id)
+          .order('created_at', { ascending: false }),
+      ]);
+      if (cancelled) return;
+
+      const allUserIds = new Set<string>();
+      receivedRes.data?.forEach((s: { from_user_id: string }) =>
+        allUserIds.add(s.from_user_id),
+      );
+      sentRes.data?.forEach((s: { to_user_id: string }) =>
+        allUserIds.add(s.to_user_id),
+      );
+
+      const userIdArr = Array.from(allUserIds);
+      const profileMap = new Map<
+        string,
+        { nickname: string; age: number; bio: string }
+      >();
+      const photoMap = new Map<string, string>();
+
+      if (userIdArr.length > 0) {
+        const [profilesRes, photosRes] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, nickname, age, bio')
+            .in('id', userIdArr),
+          supabase
+            .from('profile_photos')
+            .select('user_id, storage_path')
+            .in('user_id', userIdArr)
+            .order('display_order'),
+        ]);
+
+        profilesRes.data?.forEach(
+          (p: {
+            id: string;
+            nickname: string;
+            age: number;
+            bio: string;
+          }) => {
+            profileMap.set(p.id, {
+              nickname: p.nickname,
+              age: p.age,
+              bio: p.bio || '',
+            });
+          },
+        );
+        photosRes.data?.forEach(
+          (ph: { user_id: string; storage_path: string }) => {
+            if (!photoMap.has(ph.user_id))
+              photoMap.set(ph.user_id, ph.storage_path);
+          },
+        );
+      }
+
+      type RawSignal = {
+        id: string;
+        from_user_id: string;
+        to_user_id: string;
+        status: string;
+        created_at: string;
+      };
+
+      const mapSignal = (
+        s: RawSignal,
+        otherUserId: string,
+      ): Signal => {
+        const prof = profileMap.get(otherUserId);
+        return {
+          id: s.id,
+          fromUserId: s.from_user_id,
+          toUserId: s.to_user_id,
+          status: s.status as SignalStatus,
+          createdAt: s.created_at,
+          nickname: prof?.nickname || '알 수 없음',
+          age: prof?.age || 0,
+          bio: prof?.bio || '',
+          thumbnailUrl: photoMap.get(otherUserId) || '',
+        };
+      };
+
+      if (cancelled) return;
+      setReceivedSignals(
+        (receivedRes.data || []).map((s: RawSignal) =>
+          mapSignal(s, s.from_user_id),
+        ),
+      );
+      setSentSignals(
+        (sentRes.data || []).map((s: RawSignal) =>
+          mapSignal(s, s.to_user_id),
+        ),
+      );
+      setLoading(false);
+    }
+
+    loadSignals();
+    return () => {
+      cancelled = true;
+    };
+  }, [setBalance]);
 
   const pendingCount = useMemo(
     () =>
-      receivedSignals.filter((s) => s.status === 'PENDING').length,
+      receivedSignals.filter((s) => s.status === 'pending').length,
     [receivedSignals],
   );
 
-  const handleAccept = (signal: HeartSend) => {
-    const profile = MOCK_PROFILES.find(
-      (p) => p.id === signal.fromUserId,
-    );
-    setReceivedSignals((prev) =>
-      prev.map((s) =>
-        s.id === signal.id
-          ? { ...s, status: 'ACCEPTED' as const }
-          : s,
-      ),
-    );
-    toast.success(`${profile?.nickname}님과 매칭되었어요!`, {
-      description: '채팅을 시작해보세요',
-      icon: <MessageCircleMore size={16} className="text-gold" />,
-    });
+  const handleAccept = async (signal: Signal) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc('respond_signal', {
+        p_signal_id: signal.id,
+        p_action: 'accepted',
+      });
+
+      if (error) {
+        console.error('[Signal] 수락 실패:', error);
+        toast.error('시그널 수락에 실패했어요');
+        return;
+      }
+
+      setReceivedSignals((prev) =>
+        prev.map((s) =>
+          s.id === signal.id
+            ? { ...s, status: 'accepted' as const }
+            : s,
+        ),
+      );
+      toast.success(`${signal.nickname}님과 매칭되었어요!`, {
+        description: '채팅을 시작해보세요',
+        icon: <MessageCircleMore size={16} className="text-gold" />,
+      });
+    } catch {
+      toast.error('시그널 수락에 실패했어요');
+    }
   };
 
-  const handleDecline = (signal: HeartSend) => {
-    setReceivedSignals((prev) =>
-      prev.map((s) =>
-        s.id === signal.id
-          ? { ...s, status: 'DECLINED' as const }
-          : s,
-      ),
-    );
-    toast('시그널을 거절했어요', {
-      icon: <HeartOff size={16} className="text-foreground/40" />,
-    });
+  const handleDecline = async (signal: Signal) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc('respond_signal', {
+        p_signal_id: signal.id,
+        p_action: 'declined',
+      });
+
+      if (error) {
+        console.error('[Signal] 거절 실패:', error);
+        toast.error('시그널 거절에 실패했어요');
+        return;
+      }
+
+      setReceivedSignals((prev) =>
+        prev.map((s) =>
+          s.id === signal.id
+            ? { ...s, status: 'declined' as const }
+            : s,
+        ),
+      );
+      toast('시그널을 거절했어요', {
+        icon: <HeartOff size={16} className="text-foreground/40" />,
+      });
+    } catch {
+      toast.error('시그널 거절에 실패했어요');
+    }
   };
 
   const signals =
     activeTab === 'received' ? receivedSignals : sentSignals;
   const pendingSignals = signals.filter(
-    (s) => s.status === 'PENDING',
+    (s) => s.status === 'pending',
   );
-  const otherSignals = signals.filter((s) => s.status !== 'PENDING');
+  const otherSignals = signals.filter((s) => s.status !== 'pending');
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-20">
@@ -191,14 +361,17 @@ export default function SignalPage() {
 
       {/* 컨텐츠 */}
       <div className="flex-1 px-4 pt-4">
-        {signals.length === 0 ? (
+        {loading ? (
+          <div className="flex justify-center pt-24">
+            <Loader2 size={28} className="animate-spin text-gold" />
+          </div>
+        ) : signals.length === 0 ? (
           <EmptyState
             tab={activeTab}
             onExplore={() => router.push('/home')}
           />
         ) : (
           <div className="flex flex-col gap-3">
-            {/* 대기중 시그널 */}
             {pendingSignals.length > 0 && (
               <section>
                 {activeTab === 'received' &&
@@ -215,13 +388,24 @@ export default function SignalPage() {
                     onAccept={handleAccept}
                     onDecline={handleDecline}
                     onProfile={(id) => router.push(`/profile/${id}`)}
-                    onChat={() => router.push('/chat')}
+                    onChat={(fromUserId) => {
+                      const finalU1 =
+                        currentUserId && fromUserId < currentUserId
+                          ? fromUserId
+                          : currentUserId;
+                      const finalU2 =
+                        currentUserId && fromUserId < currentUserId
+                          ? currentUserId
+                          : fromUserId;
+                      router.push(
+                        `/chat?u1=${finalU1}&u2=${finalU2}`,
+                      );
+                    }}
                   />
                 ))}
               </section>
             )}
 
-            {/* 처리된 시그널 */}
             {otherSignals.length > 0 && (
               <section>
                 {pendingSignals.length > 0 &&
@@ -238,7 +422,19 @@ export default function SignalPage() {
                     onAccept={handleAccept}
                     onDecline={handleDecline}
                     onProfile={(id) => router.push(`/profile/${id}`)}
-                    onChat={() => router.push('/chat')}
+                    onChat={(fromUserId) => {
+                      const finalU1 =
+                        currentUserId && fromUserId < currentUserId
+                          ? fromUserId
+                          : currentUserId;
+                      const finalU2 =
+                        currentUserId && fromUserId < currentUserId
+                          ? currentUserId
+                          : fromUserId;
+                      router.push(
+                        `/chat?u1=${finalU1}&u2=${finalU2}`,
+                      );
+                    }}
                   />
                 ))}
               </section>
@@ -260,24 +456,22 @@ function SignalCard({
   onProfile,
   onChat,
 }: {
-  signal: HeartSend;
+  signal: Signal;
   tab: Tab;
-  onAccept: (s: HeartSend) => void;
-  onDecline: (s: HeartSend) => void;
+  onAccept: (s: Signal) => void;
+  onDecline: (s: Signal) => void;
   onProfile: (id: string) => void;
-  onChat: () => void;
+  onChat: (otherUserId: string) => void;
 }) {
-  const userId =
+  const otherUserId =
     tab === 'received' ? signal.fromUserId : signal.toUserId;
-  const profile = MOCK_PROFILES.find((p) => p.id === userId);
-  if (!profile) return null;
 
   const config = STATUS_CONFIG[signal.status];
   const StatusIcon = config.icon;
-  const isPending = signal.status === 'PENDING';
-  const isAccepted = signal.status === 'ACCEPTED';
+  const isPending = signal.status === 'pending';
+  const isAccepted = signal.status === 'accepted';
   const isDone =
-    signal.status === 'DECLINED' || signal.status === 'EXPIRED';
+    signal.status === 'declined' || signal.status === 'expired';
 
   return (
     <div
@@ -288,35 +482,35 @@ function SignalCard({
       } ${isDone ? 'opacity-50' : ''}`}
     >
       <div className="flex items-center gap-3 p-4">
-        {/* 아바타 */}
         <button
-          onClick={() => onProfile(profile.id)}
+          onClick={() => onProfile(otherUserId)}
           className="shrink-0"
         >
           <Avatar
-            src={profile.thumbnailUrl || null}
-            name={profile.nickname}
+            src={signal.thumbnailUrl || null}
+            name={signal.nickname}
             size="lg"
           />
         </button>
 
-        {/* 정보 */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <button
-              onClick={() => onProfile(profile.id)}
+              onClick={() => onProfile(otherUserId)}
               className="truncate text-sm font-semibold text-foreground hover:underline"
             >
-              {profile.nickname}
+              {signal.nickname}
             </button>
-            <span className="shrink-0 text-xs text-foreground-soft">
-              {profile.age}
-            </span>
+            {signal.age > 0 && (
+              <span className="shrink-0 text-xs text-foreground-soft">
+                {signal.age}
+              </span>
+            )}
           </div>
 
-          {profile.bio && (
+          {signal.bio && (
             <p className="mt-0.5 truncate text-xs text-foreground/40">
-              {profile.bio}
+              {signal.bio}
             </p>
           )}
 
@@ -332,7 +526,6 @@ function SignalCard({
           </div>
         </div>
 
-        {/* 액션 */}
         <div className="flex shrink-0 items-center gap-1.5">
           {tab === 'received' && isPending && (
             <>
@@ -354,7 +547,7 @@ function SignalCard({
 
           {isAccepted && (
             <button
-              onClick={onChat}
+              onClick={() => onChat(otherUserId)}
               className="flex h-9 items-center gap-1.5 rounded-xl border border-gold/30 bg-gold/10 px-3.5 text-xs font-medium text-gold transition-colors hover:bg-gold/20"
             >
               <MessageCircleMore size={14} />

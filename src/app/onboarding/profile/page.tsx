@@ -195,7 +195,9 @@ export default function ProfileSetupPage() {
     if (!files) return;
     const remaining = MAX_PHOTOS - photos.length;
     const selected = Array.from(files).slice(0, remaining);
-    const newPhotos = selected.map((file) => URL.createObjectURL(file));
+    const newPhotos = selected.map((file) =>
+      URL.createObjectURL(file),
+    );
     setPhotos((prev) => [...prev, ...newPhotos]);
     setPhotoFiles((prev) => [...prev, ...selected]);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -347,6 +349,12 @@ export default function ProfileSetupPage() {
         if (photoError) {
           console.error('[Profile] 사진 DB 저장 에러:', photoError);
         }
+      }
+
+      try {
+        await supabase.rpc('claim_profile_complete_bonus');
+      } catch {
+        // 조건 미충족 시 무시
       }
 
       router.push('/onboarding/complete');

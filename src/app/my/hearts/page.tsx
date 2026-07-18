@@ -54,7 +54,9 @@ const TYPE_LABELS: Record<string, string> = {
   attendance: '출석체크 보상',
   streak_bonus: '연속 출석 보너스',
   signal_send: '시그널 보내기',
+  signal_accepted: '시그널 수락 환급',
   purchase: '하트 충전',
+  profile_complete: '프로필 완성 보상',
 };
 
 function formatDate(dateStr: string) {

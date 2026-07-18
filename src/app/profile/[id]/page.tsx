@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -72,7 +72,7 @@ export default function ProfileDetailPage() {
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetail, setReportDetail] = useState('');
-  const { balance, deduct } = useHeartStore();
+  const { balance, setBalance } = useHeartStore();
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -122,16 +122,37 @@ export default function ProfileDetailPage() {
         },
         createdAt: p.created_at,
       });
+
+      if (user && user.id !== profileId) {
+        const { data: existingSignal } = await supabase
+          .from('signals')
+          .select('id, status')
+          .eq('from_user_id', user.id)
+          .eq('to_user_id', profileId)
+          .maybeSingle();
+
+        if (existingSignal) {
+          setHeartStatus('sent');
+        }
+
+        const { data: heartData } = await supabase
+          .from('hearts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single();
+        if (heartData) setBalance(heartData.balance);
+      }
+
       setLoading(false);
     };
 
     fetchProfile();
-  }, [profileId]);
+  }, [profileId, setBalance]);
   const visibleRegion =
     profile?.visibility.region === 'public' ? profile.region : null;
   const visibleAge = profile?.visibility.age === 'public';
 
-  const handleSendHeart = useCallback(async () => {
+  const handleSendHeart = async () => {
     if (heartStatus !== 'idle') return;
 
     if (balance < HEART_COST.SIGNAL) {
@@ -144,20 +165,52 @@ export default function ProfileDetailPage() {
 
     setHeartStatus('sending');
 
-    await new Promise((r) => setTimeout(r, 800));
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.rpc('send_signal', {
+        p_to_user_id: profileId,
+      });
 
-    const success = deduct(HEART_COST.SIGNAL);
-    if (success) {
+      if (error) {
+        setHeartStatus('idle');
+        if (error.message?.includes('insufficient_hearts')) {
+          toast.error('하트가 부족해요', {
+            description: '출석체크나 충전으로 하트를 모아보세요',
+          });
+        } else if (error.message?.includes('duplicate')) {
+          setHeartStatus('sent');
+          toast.info('이미 시그널을 보냈어요');
+        } else if (error.message?.includes('blocked_user')) {
+          toast.error('시그널을 보낼 수 없는 사용자예요');
+        } else {
+          console.error('[Signal] 전송 실패:', error);
+          toast.error('시그널 전송에 실패했어요');
+        }
+        return;
+      }
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: heartData } = await supabase
+          .from('hearts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single();
+        if (heartData) setBalance(heartData.balance);
+      }
+
       setHeartStatus('sent');
       toast.success(`${profile?.nickname}님에게 시그널을 보냈어요`, {
         description: '하트 3개를 사용했어요',
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
-    } else {
+    } catch {
       setHeartStatus('idle');
-      toast.error('하트가 부족해요');
+      toast.error('시그널 전송에 실패했어요');
     }
-  }, [heartStatus, balance, deduct, profile?.nickname]);
+  };
 
   const handleReport = () => {
     setShowMenu(false);
@@ -166,16 +219,49 @@ export default function ProfileDetailPage() {
     setShowReport(true);
   };
 
-  const handleReportSubmit = () => {
+  const handleReportSubmit = async () => {
     if (!reportReason) return;
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from('reports').insert({
+      reporter_id: user.id,
+      reported_id: profileId,
+      reason: reportReason,
+      detail: reportReason === 'OTHER' ? reportDetail.trim() : null,
+    });
+
     setShowReport(false);
     toast.success('신고가 접수되었어요', {
       description: '검토 후 적절한 조치를 취할게요',
     });
   };
 
-  const handleBlock = () => {
+  const handleBlock = async () => {
     setShowMenu(false);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase.from('blocks').insert({
+      blocker_id: user.id,
+      blocked_id: profileId,
+    });
+
+    if (error) {
+      if (error.message?.includes('duplicate')) {
+        toast.info('이미 차단된 사용자예요');
+      } else {
+        toast.error('차단에 실패했어요');
+      }
+      return;
+    }
+
     toast.success(`${profile?.nickname}님을 차단했어요`, {
       description: '더 이상 서로의 프로필이 보이지 않아요',
     });

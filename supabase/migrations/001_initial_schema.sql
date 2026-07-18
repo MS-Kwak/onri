@@ -86,7 +86,7 @@ CREATE TABLE public.heart_transactions (
   id           uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id      uuid        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   amount       integer     NOT NULL,
-  type         text        NOT NULL CHECK (type IN ('signup_bonus','attendance','signal_send','purchase','streak_bonus')),
+  type         text        NOT NULL CHECK (type IN ('signup_bonus','attendance','signal_send','purchase','streak_bonus','signal_accepted','profile_complete')),
   reference_id uuid,
   description  text,
   created_at   timestamptz NOT NULL DEFAULT now()
@@ -358,6 +358,13 @@ BEGIN
     VALUES (_u1, _u2, p_signal_id)
     ON CONFLICT (user1_id, user2_id) DO UPDATE
     SET is_active = true;
+
+    UPDATE public.hearts
+    SET balance = balance + 1
+    WHERE user_id = _signal.from_user_id;
+
+    INSERT INTO public.heart_transactions (user_id, amount, type, reference_id, description)
+    VALUES (_signal.from_user_id, 1, 'signal_accepted', p_signal_id, '시그널 수락 환급');
   END IF;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -422,6 +429,50 @@ BEGIN
     'bonus', _bonus,
     'total', _reward + _bonus
   );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ============================================================
+-- FUNCTION: 프로필 완성도 100% 보상 (RPC)
+-- 닉네임, 정체성, 관심사, 지역, 사진 1장 이상 → 하트 3개 (1회만)
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.claim_profile_complete_bonus()
+RETURNS jsonb AS $$
+DECLARE
+  _bonus CONSTANT int := 3;
+  _p     record;
+  _photo_count int;
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM public.heart_transactions
+    WHERE user_id = auth.uid() AND type = 'profile_complete'
+  ) THEN
+    RAISE EXCEPTION 'already_claimed' USING HINT = '이미 프로필 완성 보상을 받았습니다';
+  END IF;
+
+  SELECT * INTO _p FROM public.profiles WHERE id = auth.uid();
+
+  SELECT count(*) INTO _photo_count
+  FROM public.profile_photos WHERE user_id = auth.uid();
+
+  IF _p.nickname IS NULL OR _p.nickname = '' OR _p.nickname LIKE '사용자_%'
+     OR _p.identity IS NULL
+     OR _p.region IS NULL OR _p.region = ''
+     OR _p.bio IS NULL OR _p.bio = ''
+     OR coalesce(array_length(_p.looking_for, 1), 0) = 0
+     OR coalesce(array_length(_p.interests, 1), 0) = 0
+     OR _photo_count = 0
+  THEN
+    RAISE EXCEPTION 'incomplete_profile' USING HINT = '프로필을 모두 채워주세요';
+  END IF;
+
+  UPDATE public.hearts SET balance = balance + _bonus WHERE user_id = auth.uid();
+
+  INSERT INTO public.heart_transactions (user_id, amount, type, description)
+  VALUES (auth.uid(), _bonus, 'profile_complete', '프로필 완성 보상');
+
+  RETURN jsonb_build_object('bonus', _bonus);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
