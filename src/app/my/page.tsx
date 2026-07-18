@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useMemo, useRef, Suspense } from 'react';
+import {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  Suspense,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   User,
@@ -18,25 +24,35 @@ import {
   FileText,
   LogOut,
   UserX,
-  Sparkles,
   Crown,
   Check,
-  Info,
   Clock,
   AlertTriangle,
+  Loader2,
+  Sparkles,
+  Info,
 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
 import { IDENTITY_LABELS } from '@/lib/constants';
-import type { VerificationStatus } from '@/types';
+import type { Identity, VerificationStatus } from '@/types';
 import { useHeartStore } from '@/store';
 import { ATTENDANCE_REWARD, BRAND } from '@/lib/constants';
+import { createClient } from '@/lib/supabase';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
+
+function getWeekStartDate() {
+  const now = new Date();
+  const day = now.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - diff);
+  return monday.toISOString().slice(0, 10);
+}
 
 const WITHDRAW_REASONS = [
   { id: 'NO_MATCH', label: '마음에 드는 사람을 찾지 못했어요' },
@@ -47,11 +63,15 @@ const WITHDRAW_REASONS = [
   { id: 'OTHER', label: '기타' },
 ];
 
-function getMockAttendance() {
-  const today = new Date().getDay();
-  const adjustedToday = today === 0 ? 6 : today - 1;
-  return WEEKDAYS.map((_, i) => i < adjustedToday);
-}
+type ProfileData = {
+  nickname: string;
+  identity: Identity;
+  age: number;
+  region: string;
+  bio: string;
+  thumbnailUrl: string;
+  verificationStatus: VerificationStatus;
+};
 
 export default function MyPageWrapper() {
   return (
@@ -64,11 +84,16 @@ export default function MyPageWrapper() {
 function MyPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { balance, add } = useHeartStore();
-  const profile = MOCK_CURRENT_USER;
+  const { balance, setBalance } = useHeartStore();
 
-  const [attendance, setAttendance] = useState(getMockAttendance);
+  const [profile, setProfile] = useState<ProfileData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [attendanceDates, setAttendanceDates] = useState<Set<string>>(
+    new Set(),
+  );
   const [checkedToday, setCheckedToday] = useState(false);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [streak, setStreak] = useState(0);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState('');
@@ -79,75 +104,248 @@ function MyPage() {
     return d === 0 ? 6 : d - 1;
   }, []);
 
-  const streak = useMemo(() => {
-    let count = 0;
-    for (let i = todayIndex - 1; i >= 0; i--) {
-      if (attendance[i]) count++;
-      else break;
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadData() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace('/');
+        return;
+      }
+      if (cancelled) return;
+
+      const [profileRes, heartRes, photoRes, attendRes] =
+        await Promise.all([
+          supabase
+            .from('profiles')
+            .select('nickname, identity, age, region, bio')
+            .eq('id', user.id)
+            .single(),
+          supabase
+            .from('hearts')
+            .select('balance')
+            .eq('user_id', user.id)
+            .single(),
+          supabase
+            .from('profile_photos')
+            .select('storage_path')
+            .eq('user_id', user.id)
+            .order('display_order')
+            .limit(1),
+          supabase
+            .from('attendances')
+            .select('date, streak')
+            .eq('user_id', user.id)
+            .gte('date', getWeekStartDate())
+            .order('date', { ascending: false }),
+        ]);
+      if (cancelled) return;
+
+      if (profileRes.data) {
+        const param = searchParams.get('verification');
+        setProfile({
+          nickname: profileRes.data.nickname,
+          identity: profileRes.data.identity as Identity,
+          age: profileRes.data.age,
+          region: profileRes.data.region,
+          bio: profileRes.data.bio || '',
+          thumbnailUrl: photoRes.data?.[0]?.storage_path || '',
+          verificationStatus:
+            param === 'pending'
+              ? 'pending'
+              : ('none' as VerificationStatus),
+        });
+      }
+
+      if (heartRes.data) {
+        setBalance(heartRes.data.balance);
+      }
+
+      if (attendRes.data) {
+        const dates = new Set(
+          attendRes.data.map((a: { date: string }) => a.date),
+        );
+        setAttendanceDates(dates);
+        const today = new Date().toISOString().slice(0, 10);
+        setCheckedToday(dates.has(today));
+        if (attendRes.data.length > 0) {
+          setStreak(attendRes.data[0].streak);
+        }
+      }
+
+      setLoading(false);
     }
-    if (checkedToday) count++;
-    return count;
-  }, [attendance, checkedToday, todayIndex]);
 
-  const handleAttendance = () => {
-    if (checkedToday) return;
+    loadData();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, searchParams, setBalance]);
 
-    let reward = ATTENDANCE_REWARD.DAILY;
-    const newStreak = streak + 1;
-    if (newStreak >= 7) reward += ATTENDANCE_REWARD.STREAK_7;
-    else if (newStreak >= 3) reward += ATTENDANCE_REWARD.STREAK_3;
+  const handleAttendance = async () => {
+    if (checkedToday || attendanceLoading) return;
+    setAttendanceLoading(true);
 
-    add(reward);
-    setCheckedToday(true);
-    setAttendance((prev) => {
-      const next = [...prev];
-      next[todayIndex] = true;
-      return next;
-    });
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('check_attendance');
 
-    if (newStreak >= 7) {
-      toast.success(`${reward}개 하트 획득! 🎉`, {
-        description: `7일 연속 출석 보너스 +${ATTENDANCE_REWARD.STREAK_7}`,
-        icon: <Crown size={16} className="text-gold" />,
-      });
-    } else if (newStreak >= 3) {
-      toast.success(`${reward}개 하트 획득!`, {
-        description: `3일 연속 출석 보너스 +${ATTENDANCE_REWARD.STREAK_3}`,
-        icon: <Gift size={16} className="text-gold" />,
-      });
-    } else {
-      toast.success(`하트 ${reward}개를 받았어요`, {
-        icon: <Heart size={16} className="fill-gold text-gold" />,
-      });
+      if (error) {
+        if (error.message?.includes('already_checked')) {
+          toast.info('오늘 이미 출석했어요');
+          setCheckedToday(true);
+        } else {
+          toast.error('출석체크에 실패했어요');
+          console.error('[Attendance]', error);
+        }
+        setAttendanceLoading(false);
+        return;
+      }
+
+      const result = data as {
+        streak: number;
+        reward: number;
+        bonus: number;
+        total: number;
+      };
+      setCheckedToday(true);
+      setStreak(result.streak);
+      const today = new Date().toISOString().slice(0, 10);
+      setAttendanceDates((prev) => new Set([...prev, today]));
+
+      const { data: heartData } = await supabase
+        .from('hearts')
+        .select('balance')
+        .eq('user_id', (await supabase.auth.getUser()).data.user!.id)
+        .single();
+      if (heartData) setBalance(heartData.balance);
+
+      if (result.bonus > 0 && result.streak % 7 === 0) {
+        toast.success(`${result.total}개 하트 획득! 🎉`, {
+          description: `7일 연속 출석 보너스 +${result.bonus}`,
+          icon: <Crown size={16} className="text-gold" />,
+        });
+      } else if (result.bonus > 0) {
+        toast.success(`${result.total}개 하트 획득!`, {
+          description: `${result.streak}일 연속 출석 보너스 +${result.bonus}`,
+          icon: <Gift size={16} className="text-gold" />,
+        });
+      } else {
+        toast.success(`하트 ${result.total}개를 받았어요`, {
+          icon: <Heart size={16} className="fill-gold text-gold" />,
+        });
+      }
+    } catch {
+      toast.error('출석체크에 실패했어요');
+    } finally {
+      setAttendanceLoading(false);
     }
   };
 
-  const [verificationStatus] = useState(() => {
-    const param = searchParams.get('verification');
-    if (param === 'pending') return 'pending' as const;
-    if (profile.verificationStatus === 'approved')
-      return 'approved' as const;
-    return profile.verificationStatus;
-  });
-  const isVerified = verificationStatus === 'approved';
+  const isVerified = profile?.verificationStatus === 'approved';
 
   const profilePhotoRef = useRef<HTMLInputElement>(null);
-  const [profilePhoto, setProfilePhoto] = useState(
-    profile.thumbnailUrl || '',
-  );
+  const [profilePhoto, setProfilePhoto] = useState('');
 
-  const handleProfilePhotoChange = (
+  const profileThumb = profile?.thumbnailUrl || '';
+  const currentPhoto = profilePhoto || profileThumb;
+
+  const handleProfilePhotoChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setProfilePhoto(url);
-    toast.success('프로필 사진이 변경되었어요', {
-      icon: <Camera size={16} className="text-gold" />,
-    });
+
+    const previewUrl = URL.createObjectURL(file);
+    setProfilePhoto(previewUrl);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = file.name.split('.').pop() || 'jpg';
+      const filePath = `${user.id}/main_${Date.now()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        console.error('[Photo] 업로드 실패:', uploadError);
+        toast.error('사진 업로드에 실패했어요');
+        setProfilePhoto('');
+        return;
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      const { data: existing } = await supabase
+        .from('profile_photos')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('display_order', 0)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('profile_photos')
+          .update({ storage_path: publicUrl })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('profile_photos')
+          .insert({
+            user_id: user.id,
+            storage_path: publicUrl,
+            display_order: 0,
+          });
+      }
+
+      setProfilePhoto(publicUrl);
+      toast.success('프로필 사진이 변경되었어요', {
+        icon: <Camera size={16} className="text-gold" />,
+      });
+    } catch {
+      toast.error('사진 변경에 실패했어요');
+      setProfilePhoto('');
+    }
+
     if (profilePhotoRef.current) profilePhotoRef.current.value = '';
   };
+
+  if (loading || !profile) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-background pb-20">
+        <header className="sticky top-0 z-40 bg-background">
+          <div className="flex items-center justify-between px-5 pt-12 pb-3">
+            <div className="flex items-center gap-2">
+              <User size={18} className="text-gold" />
+              <h1 className="text-lg font-bold text-foreground">
+                마이페이지
+              </h1>
+            </div>
+            <ThemeToggle />
+          </div>
+          <div className="h-px bg-line" />
+        </header>
+        <div className="flex flex-1 items-center justify-center">
+          <Loader2 size={28} className="animate-spin text-gold" />
+        </div>
+        <BottomTab />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-20">
@@ -182,7 +380,7 @@ function MyPage() {
               className="group relative"
             >
               <Avatar
-                src={profilePhoto || null}
+                src={currentPhoto || null}
                 name={profile.nickname}
                 size="xl"
               />
@@ -231,7 +429,7 @@ function MyPage() {
               프로필 편집
             </button>
             <VerificationButton
-              status={verificationStatus}
+              status={profile.verificationStatus}
               onStart={() => router.push('/my/selfie-verify')}
             />
           </div>
@@ -283,13 +481,15 @@ function MyPage() {
           <div className="grid grid-cols-7 gap-1.5">
             {WEEKDAYS.map((day, i) => {
               const isToday = i === todayIndex;
-              const checked =
-                attendance[i] || (isToday && checkedToday);
               const isFuture = i > todayIndex;
 
               const dateObj = new Date();
               dateObj.setDate(dateObj.getDate() + (i - todayIndex));
+              const dateStr = dateObj.toISOString().slice(0, 10);
               const dateNum = dateObj.getDate();
+              const checked =
+                attendanceDates.has(dateStr) ||
+                (isToday && checkedToday);
 
               return (
                 <div
@@ -361,14 +561,16 @@ function MyPage() {
           {/* 출석 버튼 */}
           <button
             onClick={handleAttendance}
-            disabled={checkedToday}
+            disabled={checkedToday || attendanceLoading}
             className={`mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-all ${
               checkedToday
                 ? 'bg-foreground/5 text-foreground-soft'
                 : 'bg-gold text-ink active:scale-[0.98] hover:bg-gold/90'
             }`}
           >
-            {checkedToday ? (
+            {attendanceLoading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : checkedToday ? (
               <>
                 <Check size={16} />
                 오늘 출석 완료

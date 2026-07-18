@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -23,6 +23,7 @@ import {
   Hash,
   Plus,
   Check,
+  Loader2,
 } from 'lucide-react';
 import {
   DndContext,
@@ -45,7 +46,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Pill } from '@/components/ui/pill';
 import { Input } from '@/components/ui/input';
-import { MOCK_CURRENT_USER } from '@/data/mock-profiles';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { createClient } from '@/lib/supabase';
 import type { Identity, RelationGoal, Visibility } from '@/types';
@@ -108,68 +108,129 @@ const INTEREST_SUGGESTIONS = [
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const profile = MOCK_CURRENT_USER;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pageLoading, setPageLoading] = useState(true);
 
   const [photos, setPhotos] = useState<string[]>([]);
-  const [nickname, setNickname] = useState(profile.nickname);
-  const [nicknameDup, setNicknameDup] = useState<boolean | null>(null);
+  const [nickname, setNickname] = useState('');
+  const [nicknameDup, setNicknameDup] = useState<boolean | null>(
+    null,
+  );
   const [nicknameChecking, setNicknameChecking] = useState(false);
-  const nicknameDupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const originalNickname = useRef(profile.nickname);
+  const nicknameDupTimer = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const [originalNickname, setOriginalNickname] = useState('');
 
-  const checkNicknameDuplicate = useCallback(async (value: string) => {
-    if (value.trim().length < 2 || value.trim() === originalNickname.current) {
-      setNicknameDup(null);
-      return;
-    }
-    setNicknameChecking(true);
-    const supabase = createClient();
-    const { data } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('nickname', value.trim())
-      .maybeSingle();
+  const checkNicknameDuplicate = useCallback(
+    async (value: string) => {
+      if (
+        value.trim().length < 2 ||
+        value.trim() === originalNickname
+      ) {
+        setNicknameDup(null);
+        return;
+      }
+      setNicknameChecking(true);
+      const supabase = createClient();
+      const { data } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('nickname', value.trim())
+        .maybeSingle();
 
-    setNicknameDup(!!data);
-    setNicknameChecking(false);
-  }, []);
+      setNicknameDup(!!data);
+      setNicknameChecking(false);
+    },
+    [originalNickname],
+  );
 
   const handleNicknameChange = (value: string) => {
     setNickname(value);
     setNicknameDup(null);
-    if (nicknameDupTimer.current) clearTimeout(nicknameDupTimer.current);
-    if (value.trim().length >= 2 && value.trim() !== originalNickname.current) {
-      nicknameDupTimer.current = setTimeout(() => checkNicknameDuplicate(value), 500);
+    if (nicknameDupTimer.current)
+      clearTimeout(nicknameDupTimer.current);
+    if (
+      value.trim().length >= 2 &&
+      value.trim() !== originalNickname
+    ) {
+      nicknameDupTimer.current = setTimeout(
+        () => checkNicknameDuplicate(value),
+        500,
+      );
     }
   };
 
-  const [bio, setBio] = useState(profile.bio);
-  const [identity, setIdentity] = useState<Identity>(
-    profile.identity,
-  );
+  const [bio, setBio] = useState('');
+  const [identity, setIdentity] = useState<Identity>('OTHER');
   const [otherIdentity, setOtherIdentity] = useState('');
-  const [goals, setGoals] = useState<RelationGoal[]>([
-    ...profile.lookingFor,
-  ]);
-  const [regions, setRegions] = useState<string[]>([profile.region]);
-  const [height, setHeight] = useState(
-    profile.height?.toString() ?? '',
-  );
-  const [weight, setWeight] = useState(
-    profile.weight?.toString() ?? '',
-  );
-  const [activeTimes, setActiveTimes] = useState<string[]>([
-    ...profile.activeTime,
-  ]);
-  const [interests, setInterests] = useState<string[]>([
-    ...profile.interests,
-  ]);
+  const [goals, setGoals] = useState<RelationGoal[]>([]);
+  const [regions, setRegions] = useState<string[]>([]);
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [activeTimes, setActiveTimes] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState('');
   const [visibility, setVisibility] = useState<{
     region: Visibility;
     age: Visibility;
-  }>({ ...profile.visibility });
+  }>({ region: 'public', age: 'public' });
+
+  useEffect(() => {
+    async function loadProfile() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        router.replace('/');
+        return;
+      }
+
+      const [profileRes, photosRes] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single(),
+        supabase
+          .from('profile_photos')
+          .select('storage_path, display_order')
+          .eq('user_id', user.id)
+          .order('display_order'),
+      ]);
+
+      if (profileRes.data) {
+        const p = profileRes.data;
+        setNickname(p.nickname || '');
+        setOriginalNickname(p.nickname || '');
+        setBio(p.bio || '');
+        setIdentity((p.identity as Identity) || 'OTHER');
+        setOtherIdentity(p.identity_other || '');
+        setGoals((p.looking_for as RelationGoal[]) || []);
+        setRegions(p.region ? [p.region] : []);
+        setHeight(p.height?.toString() ?? '');
+        setWeight(p.weight?.toString() ?? '');
+        setActiveTimes(p.active_time || []);
+        setInterests(p.interests || []);
+        setVisibility({
+          region: p.visibility_region || 'public',
+          age: p.visibility_age || 'public',
+        });
+      }
+
+      if (photosRes.data) {
+        setPhotos(
+          photosRes.data.map(
+            (ph: { storage_path: string }) => ph.storage_path,
+          ),
+        );
+      }
+
+      setPageLoading(false);
+    }
+    loadProfile();
+  }, [router]);
 
   const MAX_PHOTOS = 6;
 
@@ -239,9 +300,11 @@ export default function ProfileEditPage() {
     setInterests((prev) => prev.filter((t) => t !== tag));
   };
 
-  const nicknameChanged = nickname.trim() !== originalNickname.current;
+  const nicknameChanged =
+    nickname.trim() !== originalNickname;
   const nicknameValid =
-    nickname.trim().length >= 2 && nickname.trim().length <= 10 &&
+    nickname.trim().length >= 2 &&
+    nickname.trim().length <= 10 &&
     (!nicknameChanged || nicknameDup === false);
   const canSave =
     photos.length >= 1 &&
@@ -250,10 +313,65 @@ export default function ProfileEditPage() {
     goals.length > 0 &&
     regions.length > 0;
 
-  const handleSave = () => {
-    toast.success('프로필이 저장되었어요');
-    router.back();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('로그인이 필요합니다');
+        setSaving(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          nickname: nickname.trim(),
+          bio: bio.trim(),
+          identity,
+          identity_other:
+            identity === 'OTHER' ? otherIdentity.trim() : null,
+          looking_for: goals,
+          region: regions[0] || '',
+          height: height ? parseInt(height) : null,
+          weight: weight ? parseInt(weight) : null,
+          active_time: activeTimes,
+          interests,
+          visibility_region: visibility.region,
+          visibility_age: visibility.age,
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('[ProfileEdit] 저장 실패:', error);
+        toast.error('저장에 실패했어요');
+        setSaving(false);
+        return;
+      }
+
+      toast.success('프로필이 저장되었어요');
+      router.back();
+    } catch {
+      toast.error('저장에 실패했어요');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (pageLoading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <Loader2 size={28} className="animate-spin text-gold" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -349,11 +467,17 @@ export default function ProfileEditPage() {
             }
           />
           {nicknameChecking && nickname.trim().length >= 2 && (
-            <p className="mt-1.5 text-xs text-foreground/40">중복 확인 중...</p>
+            <p className="mt-1.5 text-xs text-foreground/40">
+              중복 확인 중...
+            </p>
           )}
-          {nicknameDup === false && nicknameChanged && !nicknameChecking && (
-            <p className="mt-1.5 text-xs text-green-400">사용 가능한 닉네임이에요</p>
-          )}
+          {nicknameDup === false &&
+            nicknameChanged &&
+            !nicknameChecking && (
+              <p className="mt-1.5 text-xs text-green-400">
+                사용 가능한 닉네임이에요
+              </p>
+            )}
         </Section>
 
         {/* 자기소개 */}
@@ -637,11 +761,17 @@ export default function ProfileEditPage() {
           variant="primary"
           size="lg"
           fullWidth
-          disabled={!canSave}
+          disabled={!canSave || saving}
           onClick={handleSave}
         >
-          <Check size={18} />
-          저장하기
+          {saving ? (
+            '저장 중...'
+          ) : (
+            <>
+              <Check size={18} />
+              저장하기
+            </>
+          )}
         </Button>
       </div>
     </div>

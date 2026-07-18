@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -14,11 +14,13 @@ import {
   Check,
   Clock,
   CalendarCheck,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHeartStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { createClient } from '@/lib/supabase';
 
 const HEART_PACKAGES = [
   { id: 'h10', amount: 10, price: 2_500, label: '시작', icon: Heart },
@@ -47,32 +49,116 @@ const HEART_PACKAGES = [
   },
 ];
 
-const USAGE_HISTORY = [
-  { label: '시그널 보내기', amount: -3, date: '오늘' },
-  { label: '출석체크 보상', amount: 1, date: '오늘' },
-  { label: '시그널 보내기', amount: -3, date: '어제' },
-  { label: '시그널 보내기', amount: -3, date: '어제' },
-  { label: '가입 축하 하트', amount: 10, date: '7월 1일' },
-];
+const TYPE_LABELS: Record<string, string> = {
+  signup_bonus: '가입 축하 하트',
+  attendance: '출석체크 보상',
+  streak_bonus: '연속 출석 보너스',
+  signal_send: '시그널 보내기',
+  purchase: '하트 충전',
+};
+
+function formatDate(dateStr: string) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return '오늘';
+  if (diffDays === 1) return '어제';
+  return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+type Transaction = {
+  id: string;
+  amount: number;
+  type: string;
+  description: string | null;
+  created_at: string;
+};
 
 export default function HeartsPage() {
   const router = useRouter();
-  const { balance, add } = useHeartStore();
+  const { balance, setBalance } = useHeartStore();
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [heartRes, txRes] = await Promise.all([
+        supabase
+          .from('hearts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single(),
+        supabase
+          .from('heart_transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
+      ]);
+
+      if (heartRes.data) setBalance(heartRes.data.balance);
+      if (txRes.data) setTransactions(txRes.data);
+      setLoading(false);
+    }
+    load();
+  }, [setBalance]);
 
   const handlePurchase = async () => {
     const pkg = HEART_PACKAGES.find((p) => p.id === selectedPkg);
     if (!pkg) return;
 
     setIsPurchasing(true);
-    await new Promise((r) => setTimeout(r, 1000));
-    add(pkg.amount);
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setIsPurchasing(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('hearts')
+      .update({ balance: balance + pkg.amount })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast.error('충전에 실패했어요');
+      setIsPurchasing(false);
+      return;
+    }
+
+    await supabase.from('heart_transactions').insert({
+      user_id: user.id,
+      amount: pkg.amount,
+      type: 'purchase',
+      description: `하트 ${pkg.amount}개 충전`,
+    });
+
+    setBalance(balance + pkg.amount);
     setIsPurchasing(false);
     setSelectedPkg(null);
     toast.success(`하트 ${pkg.amount}개가 충전되었어요`, {
       icon: <Heart size={16} className="fill-gold text-gold" />,
     });
+
+    const { data: txData } = await supabase
+      .from('heart_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    if (txData) setTransactions(txData);
   };
 
   return (
@@ -142,7 +228,7 @@ export default function HeartsPage() {
                     </span>
                   )}
                   {pkg.best && (
-                    <span className="absolute -top-2.5 rounded-full bg-linear-to-r from-gold to-amber-400 px-2.5 py-0.5 text-[10px] font-bold text-ink">
+                    <span className="absolute -top-2.5 rounded-full bg-gold px-2.5 py-0.5 text-[10px] font-bold text-ink">
                       BEST
                     </span>
                   )}
@@ -220,31 +306,46 @@ export default function HeartsPage() {
             사용 내역
           </h2>
           <div className="overflow-hidden rounded-2xl bg-surface-secondary">
-            {USAGE_HISTORY.map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between px-4 py-3 not-last:border-b not-last:border-line"
-              >
-                <div>
-                  <p className="text-sm text-foreground/70">
-                    {item.label}
-                  </p>
-                  <p className="text-[10px] text-foreground-dim">
-                    {item.date}
-                  </p>
-                </div>
-                <span
-                  className={`text-sm font-semibold ${
-                    item.amount > 0
-                      ? 'text-gold'
-                      : 'text-foreground/40'
-                  }`}
-                >
-                  {item.amount > 0 ? '+' : ''}
-                  {item.amount}
-                </span>
+            {loading ? (
+              <div className="flex justify-center py-6">
+                <Loader2
+                  size={20}
+                  className="animate-spin text-gold"
+                />
               </div>
-            ))}
+            ) : transactions.length === 0 ? (
+              <p className="py-6 text-center text-sm text-foreground-dim">
+                아직 사용 내역이 없어요
+              </p>
+            ) : (
+              transactions.map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center justify-between px-4 py-3 not-last:border-b not-last:border-line"
+                >
+                  <div>
+                    <p className="text-sm text-foreground/70">
+                      {TYPE_LABELS[tx.type] ||
+                        tx.description ||
+                        tx.type}
+                    </p>
+                    <p className="text-[10px] text-foreground-dim">
+                      {formatDate(tx.created_at)}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-sm font-semibold ${
+                      tx.amount > 0
+                        ? 'text-gold'
+                        : 'text-foreground/40'
+                    }`}
+                  >
+                    {tx.amount > 0 ? '+' : ''}
+                    {tx.amount}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </div>

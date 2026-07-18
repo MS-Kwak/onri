@@ -39,7 +39,7 @@ const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 
 export default function HomePage() {
   const router = useRouter();
-  const { balance } = useHeartStore();
+  const { balance, setBalance } = useHeartStore();
   const { isDark } = useTheme();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -75,6 +75,13 @@ export default function HomePage() {
         nickname: myProfile?.nickname || '나',
         thumbnailUrl: myPhotos?.[0]?.storage_path || '',
       });
+
+      const { data: heartData } = await supabase
+        .from('hearts')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+      if (heartData) setBalance(heartData.balance);
 
       const { data: allProfiles } = await supabase
         .from('profiles')
@@ -127,7 +134,7 @@ export default function HomePage() {
     };
 
     fetchData();
-  }, []);
+  }, [setBalance]);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<
@@ -190,7 +197,13 @@ export default function HomePage() {
       }
       return true;
     });
-  }, [profiles, filterIdentities, filterGoals, filterRegions, filterAges]);
+  }, [
+    profiles,
+    filterIdentities,
+    filterGoals,
+    filterRegions,
+    filterAges,
+  ]);
 
   const clearFilters = () => {
     setFilterIdentities(new Set());
