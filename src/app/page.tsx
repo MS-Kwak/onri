@@ -67,7 +67,6 @@ export default function OnboardingPage() {
   const handleKakaoLogin = async () => {
     console.log('[Auth] 카카오 로그인 시도');
     setLoading('kakao');
-    localStorage.setItem('onri_last_login', 'kakao');
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
@@ -84,7 +83,6 @@ export default function OnboardingPage() {
   const handleAppleLogin = async () => {
     console.log('[Auth] Apple 로그인 시도');
     setLoading('apple');
-    localStorage.setItem('onri_last_login', 'apple');
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',

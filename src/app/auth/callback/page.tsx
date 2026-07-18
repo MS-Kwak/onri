@@ -27,6 +27,9 @@ export default function AuthCallbackPage() {
         return;
       }
 
+      const provider = session.user.app_metadata?.provider || 'email';
+      localStorage.setItem('onri_last_login', provider);
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('nickname')

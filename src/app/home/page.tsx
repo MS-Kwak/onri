@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
   SlidersHorizontal,
@@ -39,6 +39,7 @@ const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { balance, setBalance } = useHeartStore();
   const { isDark } = useTheme();
 
@@ -51,6 +52,14 @@ export default function HomePage() {
     thumbnailUrl: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loginProvider = searchParams.get('login');
+    if (loginProvider) {
+      localStorage.setItem('onri_last_login', loginProvider);
+      router.replace('/home', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     const fetchData = async () => {

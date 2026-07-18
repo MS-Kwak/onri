@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as PortOne from '@portone/browser-sdk/v2';
 import {
   ArrowLeft,
@@ -14,16 +14,29 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-type VerifyState = 'idle' | 'verifying' | 'processing' | 'success' | 'error';
+type VerifyState =
+  | 'idle'
+  | 'verifying'
+  | 'processing'
+  | 'success'
+  | 'error';
 
 export default function VerifyPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [state, setState] = useState<VerifyState>('idle');
   const [errorMsg, setErrorMsg] = useState('');
   const [verifiedInfo, setVerifiedInfo] = useState<{
     name: string;
     age: number;
   } | null>(null);
+
+  useEffect(() => {
+    const loginProvider = searchParams.get('login');
+    if (loginProvider) {
+      localStorage.setItem('onri_last_login', loginProvider);
+    }
+  }, [searchParams]);
 
   const handleVerify = async () => {
     setState('verifying');
@@ -43,7 +56,9 @@ export default function VerifyPage() {
           setState('idle');
           return;
         }
-        throw new Error(response?.message || '본인인증에 실패했습니다');
+        throw new Error(
+          response?.message || '본인인증에 실패했습니다',
+        );
       }
 
       setState('processing');
@@ -69,7 +84,9 @@ export default function VerifyPage() {
       }, 1500);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : '본인인증에 실패했습니다';
+        err instanceof Error
+          ? err.message
+          : '본인인증에 실패했습니다';
       setErrorMsg(message);
       setState('error');
       toast.error(message);
@@ -89,7 +106,9 @@ export default function VerifyPage() {
               <ArrowLeft size={20} />
             </button>
             <ShieldCheck size={18} className="text-gold" />
-            <h1 className="text-lg font-bold text-foreground">본인인증</h1>
+            <h1 className="text-lg font-bold text-foreground">
+              본인인증
+            </h1>
           </div>
           <ThemeToggle />
         </div>
@@ -111,7 +130,9 @@ export default function VerifyPage() {
           </div>
           <div className="flex flex-1 flex-col items-center gap-1.5">
             <div className="h-1 w-full rounded-full bg-surface" />
-            <span className="text-[10px] text-foreground-soft">완료</span>
+            <span className="text-[10px] text-foreground-soft">
+              완료
+            </span>
           </div>
         </div>
       </div>
@@ -190,7 +211,8 @@ export default function VerifyPage() {
               인증 완료!
             </h2>
             <p className="text-sm text-foreground-soft">
-              {verifiedInfo.name}님, 환영합니다 (만 {verifiedInfo.age}세)
+              {verifiedInfo.name}님, 환영합니다 (만 {verifiedInfo.age}
+              세)
             </p>
             <p className="text-xs text-foreground-soft">
               프로필 설정으로 이동합니다...
@@ -220,7 +242,9 @@ export default function VerifyPage() {
             fullWidth
             onClick={handleVerify}
           >
-            {state === 'error' ? '다시 인증하기' : '본인인증 시작하기'}
+            {state === 'error'
+              ? '다시 인증하기'
+              : '본인인증 시작하기'}
           </Button>
         )}
       </div>

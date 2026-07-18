@@ -47,6 +47,8 @@ export async function GET(request: Request) {
     console.log('[Auth Callback] 유저 조회:', user?.id ?? 'null');
 
     if (user) {
+      const provider = user.app_metadata?.provider || 'email';
+
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('nickname')
@@ -64,8 +66,15 @@ export async function GET(request: Request) {
         !profile.nickname.startsWith('사용자_')
       ) {
         console.log('[Auth Callback] 기존 유저 → /home');
-        return NextResponse.redirect(`${origin}/home`);
+        return NextResponse.redirect(
+          `${origin}/home?login=${provider}`,
+        );
       }
+
+      console.log('[Auth Callback] 신규 유저 → /auth/verify');
+      return NextResponse.redirect(
+        `${origin}/auth/verify?login=${provider}`,
+      );
     }
 
     console.log('[Auth Callback] 신규 유저 → /auth/verify');
