@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -8,6 +8,7 @@ import {
   Search,
   Heart,
   RotateCcw,
+  Loader2,
 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Avatar } from '@/components/ui/avatar';
@@ -17,16 +18,13 @@ import { toast } from 'sonner';
 import { Pill } from '@/components/ui/pill';
 import { ProfileCard } from '@/components/ui/profile-card';
 import { BottomTab } from '@/components/ui/bottom-tab';
-import {
-  MOCK_PROFILES,
-  MOCK_CURRENT_USER,
-} from '@/data/mock-profiles';
+import { createClient } from '@/lib/supabase';
 import {
   IDENTITY_LABELS,
   RELATION_GOAL_LABELS,
 } from '@/lib/constants';
 import { useHeartStore } from '@/store';
-import type { Identity, RelationGoal } from '@/types';
+import type { Identity, RelationGoal, Profile } from '@/types';
 
 const REGIONS = [
   '전체',
@@ -43,6 +41,93 @@ export default function HomePage() {
   const router = useRouter();
   const { balance } = useHeartStore();
   const { isDark } = useTheme();
+
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [currentUser, setCurrentUser] = useState<{
+    nickname: string;
+    thumbnailUrl: string;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data: myProfile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', user.id)
+        .single();
+
+      const { data: myPhotos } = await supabase
+        .from('profile_photos')
+        .select('storage_path')
+        .eq('user_id', user.id)
+        .order('display_order')
+        .limit(1);
+
+      setCurrentUser({
+        nickname: myProfile?.nickname || '나',
+        thumbnailUrl: myPhotos?.[0]?.storage_path || '',
+      });
+
+      const { data: allProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', user.id)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (allProfiles && allProfiles.length > 0) {
+        const userIds = allProfiles.map((p) => p.id);
+        const { data: allPhotos } = await supabase
+          .from('profile_photos')
+          .select('user_id, storage_path, display_order')
+          .in('user_id', userIds)
+          .order('display_order');
+
+        const photoMap = new Map<string, string>();
+        allPhotos?.forEach((photo) => {
+          if (!photoMap.has(photo.user_id)) {
+            photoMap.set(photo.user_id, photo.storage_path);
+          }
+        });
+
+        const mapped: Profile[] = allProfiles.map((p) => ({
+          id: p.id,
+          nickname: p.nickname,
+          age: p.age,
+          region: p.region,
+          thumbnailUrl: photoMap.get(p.id) || '',
+          isVerified: p.verification_status === 'approved',
+          verificationStatus: p.verification_status,
+          identity: p.identity as Identity,
+          lookingFor: (p.looking_for || []) as RelationGoal[],
+          bio: p.bio || '',
+          height: p.height,
+          weight: p.weight,
+          interests: p.interests || [],
+          activeTime: p.active_time || [],
+          visibility: {
+            region: p.visibility_region,
+            age: p.visibility_age,
+          },
+          createdAt: p.created_at,
+        }));
+
+        setProfiles(mapped);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<
@@ -83,7 +168,7 @@ export default function HomePage() {
   };
 
   const filteredProfiles = useMemo(() => {
-    return MOCK_PROFILES.filter((p) => {
+    return profiles.filter((p) => {
       if (
         filterIdentities.size > 0 &&
         !filterIdentities.has(p.identity)
@@ -105,7 +190,7 @@ export default function HomePage() {
       }
       return true;
     });
-  }, [filterIdentities, filterGoals, filterRegions, filterAges]);
+  }, [profiles, filterIdentities, filterGoals, filterRegions, filterAges]);
 
   const clearFilters = () => {
     setFilterIdentities(new Set());
@@ -115,13 +200,21 @@ export default function HomePage() {
   };
 
   const handleHeart = (id: string) => {
-    const target = MOCK_PROFILES.find((p) => p.id === id);
+    const target = profiles.find((p) => p.id === id);
     if (target) {
       toast.success(`${target.nickname}님에게 시그널을 보냈어요`, {
         icon: <Heart size={16} className="fill-gold text-gold" />,
       });
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <Loader2 size={24} className="animate-spin text-gold" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background pb-20">
@@ -172,13 +265,13 @@ export default function HomePage() {
               className="flex items-center gap-2"
             >
               <Avatar
-                src={MOCK_CURRENT_USER.thumbnailUrl || null}
-                name={MOCK_CURRENT_USER.nickname}
+                src={currentUser?.thumbnailUrl || null}
+                name={currentUser?.nickname || '나'}
                 size="sm"
                 className=""
               />
               <span className="text-sm font-medium text-foreground/80">
-                {MOCK_CURRENT_USER.nickname}
+                {currentUser?.nickname || '나'}
               </span>
             </button>
             <ThemeToggle />
