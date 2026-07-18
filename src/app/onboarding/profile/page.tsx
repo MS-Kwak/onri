@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -115,7 +115,9 @@ export default function ProfileSetupPage() {
   const router = useRouter();
 
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photoFiles, setPhotoFiles] = useState<(File | null)[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [saving, setSaving] = useState(false);
   const [nickname, setNickname] = useState('');
   const [nicknameDup, setNicknameDup] = useState<boolean | null>(
     null,
@@ -192,15 +194,16 @@ export default function ProfileSetupPage() {
     const files = e.target.files;
     if (!files) return;
     const remaining = MAX_PHOTOS - photos.length;
-    const newPhotos = Array.from(files)
-      .slice(0, remaining)
-      .map((file) => URL.createObjectURL(file));
+    const selected = Array.from(files).slice(0, remaining);
+    const newPhotos = selected.map((file) => URL.createObjectURL(file));
     setPhotos((prev) => [...prev, ...newPhotos]);
+    setPhotoFiles((prev) => [...prev, ...selected]);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handlePhotoRemove = (index: number) => {
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -209,6 +212,7 @@ export default function ProfileSetupPage() {
       setPhotos((prev) => {
         const oldIndex = prev.indexOf(active.id as string);
         const newIndex = prev.indexOf(over.id as string);
+        setPhotoFiles((pf) => arrayMove(pf, oldIndex, newIndex));
         return arrayMove(prev, oldIndex, newIndex);
       });
     }
@@ -269,8 +273,90 @@ export default function ProfileSetupPage() {
     regions.length > 0 &&
     sensitiveAgreed;
 
-  const handleNext = () => {
-    router.push('/onboarding/complete');
+  const handleNext = async () => {
+    if (!canProceed || saving) return;
+    setSaving(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인이 필요합니다');
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nickname: nickname.trim(),
+          identity: identity!,
+          identity_other:
+            identity === 'OTHER' ? otherIdentity.trim() : null,
+          looking_for: goals,
+          region: regions[0],
+          bio: bio.trim() || null,
+          height: height ? parseInt(height) : null,
+          weight: weight ? parseInt(weight) : null,
+          active_time: activeTimes,
+          interests,
+          visibility_region: visibility.region,
+          visibility_age: visibility.age,
+          sensitive_agreed: sensitiveAgreed,
+        })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
+      const uploadedUrls: { url: string; order: number }[] = [];
+      for (let i = 0; i < photoFiles.length; i++) {
+        const file = photoFiles[i];
+        if (!file) continue;
+        const ext = file.name.split('.').pop() || 'jpg';
+        const path = `${user.id}/${Date.now()}_${i}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('profile-photos')
+          .upload(path, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+
+        if (uploadError) {
+          console.error('[Profile] 사진 업로드 에러:', uploadError);
+          continue;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage
+          .from('profile-photos')
+          .getPublicUrl(path);
+
+        uploadedUrls.push({ url: publicUrl, order: i });
+      }
+
+      if (uploadedUrls.length > 0) {
+        const photoRows = uploadedUrls.map(({ url, order }) => ({
+          user_id: user.id,
+          storage_path: url,
+          display_order: order,
+        }));
+        const { error: photoError } = await supabase
+          .from('profile_photos')
+          .insert(photoRows);
+
+        if (photoError) {
+          console.error('[Profile] 사진 DB 저장 에러:', photoError);
+        }
+      }
+
+      router.push('/onboarding/complete');
+    } catch (err) {
+      console.error('[Profile] 저장 실패:', err);
+      const { toast } = await import('sonner');
+      toast.error('프로필 저장에 실패했어요. 다시 시도해주세요.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -774,10 +860,10 @@ export default function ProfileSetupPage() {
           variant="primary"
           size="lg"
           fullWidth
-          disabled={!canProceed}
+          disabled={!canProceed || saving}
           onClick={handleNext}
         >
-          다음
+          {saving ? '저장 중...' : '다음'}
         </Button>
       </div>
     </main>
