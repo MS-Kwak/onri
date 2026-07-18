@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -25,10 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import {
-  MOCK_PROFILES,
-  MOCK_CURRENT_USER,
-} from '@/data/mock-profiles';
+import { createClient } from '@/lib/supabase';
 import {
   IDENTITY_LABELS,
   RELATION_GOAL_LABELS,
@@ -36,6 +33,7 @@ import {
 } from '@/lib/constants';
 import { useHeartStore } from '@/store';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import type { Profile, Identity, RelationGoal } from '@/types';
 
 type HeartStatus = 'idle' | 'sending' | 'sent';
 
@@ -65,8 +63,10 @@ export default function ProfileDetailPage() {
   const router = useRouter();
   const params = useParams();
   const profileId = params.id as string;
-  const profile = MOCK_PROFILES.find((p) => p.id === profileId);
 
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isMyProfile, setIsMyProfile] = useState(false);
   const [heartStatus, setHeartStatus] = useState<HeartStatus>('idle');
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -74,7 +74,59 @@ export default function ProfileDetailPage() {
   const [reportDetail, setReportDetail] = useState('');
   const { balance, deduct } = useHeartStore();
 
-  const isMyProfile = profileId === MOCK_CURRENT_USER.id;
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      setIsMyProfile(user?.id === profileId);
+
+      const { data: p } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', profileId)
+        .single();
+
+      if (!p) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: photos } = await supabase
+        .from('profile_photos')
+        .select('storage_path')
+        .eq('user_id', profileId)
+        .order('display_order')
+        .limit(1);
+
+      setProfile({
+        id: p.id,
+        nickname: p.nickname,
+        age: p.age,
+        region: p.region,
+        thumbnailUrl: photos?.[0]?.storage_path || '',
+        isVerified: p.verification_status === 'approved',
+        verificationStatus: p.verification_status,
+        identity: p.identity as Identity,
+        lookingFor: (p.looking_for || []) as RelationGoal[],
+        bio: p.bio || '',
+        height: p.height,
+        weight: p.weight,
+        interests: p.interests || [],
+        activeTime: p.active_time || [],
+        visibility: {
+          region: p.visibility_region,
+          age: p.visibility_age,
+        },
+        createdAt: p.created_at,
+      });
+      setLoading(false);
+    };
+
+    fetchProfile();
+  }, [profileId]);
   const visibleRegion =
     profile?.visibility.region === 'public' ? profile.region : null;
   const visibleAge = profile?.visibility.age === 'public';
@@ -129,6 +181,14 @@ export default function ProfileDetailPage() {
     });
     setTimeout(() => router.back(), 1200);
   };
+
+  if (loading) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-background">
+        <Loader2 size={24} className="animate-spin text-gold" />
+      </div>
+    );
+  }
 
   if (!profile) {
     return (
