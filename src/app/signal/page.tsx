@@ -33,6 +33,7 @@ type Signal = {
   age: number;
   bio: string;
   thumbnailUrl: string;
+  sendCount?: number;
 };
 
 function getRelativeTime(dateStr: string): string {
@@ -217,6 +218,22 @@ export default function SignalPage() {
     [receivedSignals],
   );
 
+  const groupedSentSignals = useMemo(() => {
+    const groups = new Map<string, Signal[]>();
+    sentSignals.forEach((s) => {
+      const existing = groups.get(s.toUserId);
+      if (existing) {
+        existing.push(s);
+      } else {
+        groups.set(s.toUserId, [s]);
+      }
+    });
+    return Array.from(groups.values()).map((group) => {
+      const latest = group[0];
+      return { ...latest, sendCount: group.length };
+    });
+  }, [sentSignals]);
+
   const handleAccept = async (signal: Signal) => {
     try {
       const supabase = createClient();
@@ -277,7 +294,7 @@ export default function SignalPage() {
   };
 
   const signals =
-    activeTab === 'received' ? receivedSignals : sentSignals;
+    activeTab === 'received' ? receivedSignals : groupedSentSignals;
   const pendingSignals = signals.filter(
     (s) => s.status === 'pending',
   );
@@ -560,6 +577,14 @@ function SignalCard({
               응답 대기중
             </span>
           )}
+
+          {tab === 'sent' &&
+            signal.sendCount &&
+            signal.sendCount > 1 && (
+              <span className="rounded-lg bg-foreground/5 px-2 py-1 text-[10px] font-medium text-foreground/40">
+                {signal.sendCount}회 전송
+              </span>
+            )}
         </div>
       </div>
     </div>

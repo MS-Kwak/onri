@@ -35,7 +35,7 @@ import { useHeartStore } from '@/store';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import type { Profile, Identity, RelationGoal } from '@/types';
 
-type HeartStatus = 'idle' | 'sending' | 'sent';
+const MAX_SIGNALS = 3;
 
 const REPORT_REASONS = [
   {
@@ -67,7 +67,9 @@ export default function ProfileDetailPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isMyProfile, setIsMyProfile] = useState(false);
-  const [heartStatus, setHeartStatus] = useState<HeartStatus>('idle');
+  const [signalCount, setSignalCount] = useState(0);
+  const [isMatched, setIsMatched] = useState(false);
+  const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -124,15 +126,19 @@ export default function ProfileDetailPage() {
       });
 
       if (user && user.id !== profileId) {
-        const { data: existingSignal } = await supabase
+        const { data: existingSignals } = await supabase
           .from('signals')
           .select('id, status')
           .eq('from_user_id', user.id)
-          .eq('to_user_id', profileId)
-          .maybeSingle();
+          .eq('to_user_id', profileId);
 
-        if (existingSignal) {
-          setHeartStatus('sent');
+        if (existingSignals) {
+          setSignalCount(existingSignals.length);
+          setIsMatched(
+            existingSignals.some(
+              (s: { status: string }) => s.status === 'accepted',
+            ),
+          );
         }
 
         const { data: heartData } = await supabase
@@ -152,8 +158,11 @@ export default function ProfileDetailPage() {
     profile?.visibility.region === 'public' ? profile.region : null;
   const visibleAge = profile?.visibility.age === 'public';
 
+  const canSendSignal =
+    !sending && !isMatched && signalCount < MAX_SIGNALS;
+
   const handleSendHeart = async () => {
-    if (heartStatus !== 'idle') return;
+    if (!canSendSignal) return;
 
     if (balance < HEART_COST.SIGNAL) {
       toast.error('하트가 부족해요', {
@@ -163,7 +172,7 @@ export default function ProfileDetailPage() {
       return;
     }
 
-    setHeartStatus('sending');
+    setSending(true);
 
     try {
       const supabase = createClient();
@@ -172,20 +181,23 @@ export default function ProfileDetailPage() {
       });
 
       if (error) {
-        setHeartStatus('idle');
         if (error.message?.includes('insufficient_hearts')) {
           toast.error('하트가 부족해요', {
             description: '출석체크나 충전으로 하트를 모아보세요',
           });
-        } else if (error.message?.includes('duplicate')) {
-          setHeartStatus('sent');
-          toast.info('이미 시그널을 보냈어요');
+        } else if (error.message?.includes('max_signals_reached')) {
+          setSignalCount(MAX_SIGNALS);
+          toast.info('이 상대에게는 더 이상 시그널을 보낼 수 없어요');
+        } else if (error.message?.includes('already_matched')) {
+          setIsMatched(true);
+          toast.info('이미 매칭된 상대예요');
         } else if (error.message?.includes('blocked_user')) {
           toast.error('시그널을 보낼 수 없는 사용자예요');
         } else {
           console.error('[Signal] 전송 실패:', error);
           toast.error('시그널 전송에 실패했어요');
         }
+        setSending(false);
         return;
       }
 
@@ -201,14 +213,30 @@ export default function ProfileDetailPage() {
         if (heartData) setBalance(heartData.balance);
       }
 
-      setHeartStatus('sent');
-      toast.success(`${profile?.nickname}님에게 시그널을 보냈어요`, {
-        description: '하트 3개를 사용했어요',
-        icon: <Heart size={16} className="fill-gold text-gold" />,
-      });
+      const newCount = signalCount + 1;
+      setSignalCount(newCount);
+
+      if (newCount === 1) {
+        toast.success(
+          `${profile?.nickname}님에게 시그널을 보냈어요`,
+          {
+            description: '하트 3개를 사용했어요',
+            icon: <Heart size={16} className="fill-gold text-gold" />,
+          },
+        );
+      } else {
+        toast.success(
+          `${profile?.nickname}님에게 ${newCount}번째 시그널을 보냈어요`,
+          {
+            description: `하트 3개를 사용했어요 (${newCount}/${MAX_SIGNALS})`,
+            icon: <Heart size={16} className="fill-gold text-gold" />,
+          },
+        );
+      }
     } catch {
-      setHeartStatus('idle');
       toast.error('시그널 전송에 실패했어요');
+    } finally {
+      setSending(false);
     }
   };
 
@@ -518,22 +546,32 @@ export default function ProfileDetailPage() {
 
           <button
             onClick={handleSendHeart}
-            disabled={heartStatus !== 'idle'}
+            disabled={!canSendSignal}
             className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-semibold transition-all duration-300 ${
-              heartStatus === 'sent'
+              isMatched || signalCount >= MAX_SIGNALS
                 ? 'bg-foreground/10 text-foreground/50'
-                : heartStatus === 'sending'
+                : sending
                   ? 'bg-gold/80 text-ink'
                   : 'bg-gold text-ink active:scale-[0.98] hover:bg-gold/90'
             }`}
           >
-            {heartStatus === 'sending' ? (
+            {sending ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
                 보내는 중...
               </>
-            ) : heartStatus === 'sent' ? (
-              '수락 대기중'
+            ) : isMatched ? (
+              <>
+                <Heart size={18} className="fill-foreground/30" />
+                매칭됨
+              </>
+            ) : signalCount >= MAX_SIGNALS ? (
+              '시그널 최대 전송 완료'
+            ) : signalCount > 0 ? (
+              <>
+                <Heart size={18} className="fill-navy" />
+                시그널 다시 보내기 ({signalCount}/{MAX_SIGNALS})
+              </>
             ) : (
               <>
                 <Heart size={18} className="fill-navy" />

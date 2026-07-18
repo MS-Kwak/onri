@@ -45,12 +45,19 @@ import { createClient } from '@/lib/supabase';
 
 const WEEKDAYS = ['월', '화', '수', '목', '금', '토', '일'];
 
+function toKSTDateString(date: Date) {
+  return new Date(date.getTime() + 9 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
 function getWeekStartDate() {
   const now = new Date();
-  const day = now.getDay();
+  const kstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  const day = kstNow.getUTCDay();
   const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - diff);
+  const monday = new Date(kstNow);
+  monday.setUTCDate(kstNow.getUTCDate() - diff);
   return monday.toISOString().slice(0, 10);
 }
 
@@ -99,10 +106,13 @@ function MyPage() {
   const [withdrawReason, setWithdrawReason] = useState('');
   const [withdrawDetail, setWithdrawDetail] = useState('');
 
+  const [kstTimestamp] = useState(() => Date.now());
+
   const todayIndex = useMemo(() => {
-    const d = new Date().getDay();
+    const kstNow = new Date(kstTimestamp + 9 * 60 * 60 * 1000);
+    const d = kstNow.getUTCDay();
     return d === 0 ? 6 : d - 1;
-  }, []);
+  }, [kstTimestamp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,8 +180,8 @@ function MyPage() {
           attendRes.data.map((a: { date: string }) => a.date),
         );
         setAttendanceDates(dates);
-        const today = new Date().toISOString().slice(0, 10);
-        setCheckedToday(dates.has(today));
+        const todayKST = toKSTDateString(new Date());
+        setCheckedToday(dates.has(todayKST));
         if (attendRes.data.length > 0) {
           setStreak(attendRes.data[0].streak);
         }
@@ -303,13 +313,11 @@ function MyPage() {
           .update({ storage_path: publicUrl })
           .eq('id', existing.id);
       } else {
-        await supabase
-          .from('profile_photos')
-          .insert({
-            user_id: user.id,
-            storage_path: publicUrl,
-            display_order: 0,
-          });
+        await supabase.from('profile_photos').insert({
+          user_id: user.id,
+          storage_path: publicUrl,
+          display_order: 0,
+        });
       }
 
       setProfilePhoto(publicUrl);
@@ -483,10 +491,14 @@ function MyPage() {
               const isToday = i === todayIndex;
               const isFuture = i > todayIndex;
 
-              const dateObj = new Date();
-              dateObj.setDate(dateObj.getDate() + (i - todayIndex));
-              const dateStr = dateObj.toISOString().slice(0, 10);
-              const dateNum = dateObj.getDate();
+              const kstBase = new Date(
+                kstTimestamp + 9 * 60 * 60 * 1000,
+              );
+              kstBase.setUTCDate(
+                kstBase.getUTCDate() + (i - todayIndex),
+              );
+              const dateStr = kstBase.toISOString().slice(0, 10);
+              const dateNum = kstBase.getUTCDate();
               const checked =
                 attendanceDates.has(dateStr) ||
                 (isToday && checkedToday);
@@ -522,7 +534,7 @@ function MyPage() {
                           : 'text-foreground-soft'
                     }`}
                   >
-                    {dateObj.getMonth() + 1}/{dateNum}
+                    {kstBase.getUTCMonth() + 1}/{dateNum}
                   </span>
                   <div
                     className={`flex h-7 w-7 items-center justify-center rounded-full ${

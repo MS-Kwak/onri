@@ -13,6 +13,7 @@ type ProfileCardProps = {
   profile: Profile;
   onHeart?: (id: string) => void;
   onPress?: (id: string) => void;
+  isMatched?: boolean;
   className?: string;
 };
 
@@ -20,6 +21,7 @@ export function ProfileCard({
   profile,
   onHeart,
   onPress,
+  isMatched,
   className,
 }: ProfileCardProps) {
   const visibleAge = profile.visibility.age === 'public';
@@ -74,10 +76,17 @@ export function ProfileCard({
               e.stopPropagation();
               onHeart?.(profile.id);
             }}
-            className="rounded-full p-1.5 text-gold transition-colors hover:bg-gold/10 active:bg-gold/20"
-            aria-label="시그널 보내기"
+            className={`rounded-full p-1.5 transition-colors ${
+              isMatched
+                ? 'text-gold'
+                : 'text-gold hover:bg-gold/10 active:bg-gold/20'
+            }`}
+            aria-label={isMatched ? '매칭됨' : '시그널 보내기'}
           >
-            <Heart size={20} />
+            <Heart
+              size={20}
+              className={isMatched ? 'fill-gold' : ''}
+            />
           </button>
         </div>
 

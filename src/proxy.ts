@@ -7,6 +7,8 @@ const PUBLIC_PATHS = [
   '/auth/callback',
   '/auth/confirm',
   '/api/identity-verify',
+  '/api/check-email',
+  '/auth/reset-password',
   '/about',
   '/terms',
   '/privacy',

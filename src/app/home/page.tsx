@@ -43,6 +43,9 @@ export default function HomePage() {
   const { isDark } = useTheme();
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [matchedIds, setMatchedIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [currentUser, setCurrentUser] = useState<{
     nickname: string;
     thumbnailUrl: string;
@@ -128,6 +131,18 @@ export default function HomePage() {
         }));
 
         setProfiles(mapped);
+      }
+
+      const { data: matchedSignals } = await supabase
+        .from('signals')
+        .select('to_user_id')
+        .eq('from_user_id', user.id)
+        .eq('status', 'accepted');
+
+      if (matchedSignals) {
+        setMatchedIds(
+          new Set(matchedSignals.map((s) => s.to_user_id)),
+        );
       }
 
       setLoading(false);
@@ -232,8 +247,10 @@ export default function HomePage() {
       if (error) {
         if (error.message?.includes('insufficient_hearts')) {
           toast.error('하트가 부족해요');
-        } else if (error.message?.includes('duplicate')) {
-          toast.info('이미 시그널을 보낸 상대예요');
+        } else if (error.message?.includes('max_signals_reached')) {
+          toast.info('이 상대에게는 더 이상 시그널을 보낼 수 없어요');
+        } else if (error.message?.includes('already_matched')) {
+          toast.info('이미 매칭된 상대예요');
         } else if (error.message?.includes('blocked_user')) {
           toast.error('시그널을 보낼 수 없는 사용자예요');
         } else {
@@ -485,6 +502,7 @@ export default function HomePage() {
                 profile={profile}
                 onHeart={handleHeart}
                 onPress={(id) => router.push(`/profile/${id}`)}
+                isMatched={matchedIds.has(profile.id)}
               />
             ))}
           </div>

@@ -104,7 +104,6 @@ CREATE TABLE public.signals (
   status       text        NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','accepted','declined','expired')),
   created_at   timestamptz NOT NULL DEFAULT now(),
   responded_at timestamptz,
-  UNIQUE (from_user_id, to_user_id),
   CHECK  (from_user_id <> to_user_id)
 );
 
@@ -285,9 +284,11 @@ CREATE TRIGGER on_auth_user_created
 CREATE OR REPLACE FUNCTION public.send_signal(p_to_user_id uuid)
 RETURNS uuid AS $$
 DECLARE
-  _cost    CONSTANT int := 3;
-  _balance int;
-  _signal_id uuid;
+  _cost       CONSTANT int := 3;
+  _max_sends  CONSTANT int := 3;
+  _balance    int;
+  _sent_count int;
+  _signal_id  uuid;
 BEGIN
   SELECT balance INTO _balance
   FROM public.hearts
@@ -304,6 +305,21 @@ BEGIN
        OR (blocker_id = auth.uid() AND blocked_id = p_to_user_id)
   ) THEN
     RAISE EXCEPTION 'blocked_user' USING HINT = '차단된 사용자입니다';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.signals
+    WHERE from_user_id = auth.uid() AND to_user_id = p_to_user_id
+      AND status = 'accepted'
+  ) THEN
+    RAISE EXCEPTION 'already_matched' USING HINT = '이미 매칭된 상대입니다';
+  END IF;
+
+  SELECT count(*) INTO _sent_count FROM public.signals
+  WHERE from_user_id = auth.uid() AND to_user_id = p_to_user_id;
+
+  IF _sent_count >= _max_sends THEN
+    RAISE EXCEPTION 'max_signals_reached' USING HINT = '최대 전송 횟수를 초과했습니다';
   END IF;
 
   INSERT INTO public.signals (from_user_id, to_user_id)
@@ -377,8 +393,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.check_attendance()
 RETURNS jsonb AS $$
 DECLARE
-  _today       date := CURRENT_DATE;
-  _yesterday   date := CURRENT_DATE - 1;
+  _today       date := (now() AT TIME ZONE 'Asia/Seoul')::date;
+  _yesterday   date := (now() AT TIME ZONE 'Asia/Seoul')::date - 1;
   _prev_streak int;
   _new_streak  int;
   _reward      int;
