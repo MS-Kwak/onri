@@ -85,6 +85,29 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const dupConditions = [];
+  if (phoneNumber) dupConditions.push(`phone.eq.${phoneNumber}`);
+  if (ci) dupConditions.push(`ci.eq.${ci}`);
+
+  if (dupConditions.length > 0) {
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .or(dupConditions.join(','))
+      .neq('id', user.id)
+      .limit(1);
+
+    if (existing && existing.length > 0) {
+      console.log(`[Identity] 중복 계정 감지 → 현재 유저(${user.id}) 삭제`);
+      await supabase.auth.admin.deleteUser(user.id);
+
+      return NextResponse.json(
+        { error: '이미 가입된 본인인증 정보입니다. 기존 계정으로 로그인해주세요.' },
+        { status: 409 },
+      );
+    }
+  }
+
   const birthStr = birthDate
     ? new Date(birthDate).toISOString().slice(2, 10).replace(/-/g, '')
     : '000000';
@@ -111,14 +134,6 @@ export async function POST(request: NextRequest) {
 
   if (updateError) {
     console.error('[Identity] 프로필 업데이트 에러:', updateError);
-
-    if (updateError.code === '23505') {
-      return NextResponse.json(
-        { error: '이미 가입된 본인인증 정보입니다. 기존 계정으로 로그인해주세요.' },
-        { status: 409 },
-      );
-    }
-
     return NextResponse.json(
       { error: '프로필 저장에 실패했습니다' },
       { status: 500 },
