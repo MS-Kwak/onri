@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
   if (updateError) {
     console.error('[Identity] 프로필 업데이트 에러:', updateError);
 
-    if (updateError.code === '23505' && updateError.message?.includes('ci')) {
+    if (updateError.code === '23505') {
       return NextResponse.json(
         { error: '이미 가입된 본인인증 정보입니다. 기존 계정으로 로그인해주세요.' },
         { status: 409 },
