@@ -21,6 +21,12 @@ export default function OnboardingPage() {
   const [email, setEmail] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [emailError, setEmailError] = useState('');
+  const [lastLogin] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('onri_last_login');
+    }
+    return null;
+  });
 
   useEffect(() => {
     const checkSession = async () => {
@@ -50,6 +56,7 @@ export default function OnboardingPage() {
   const handleKakaoLogin = async () => {
     console.log('[Auth] 카카오 로그인 시도');
     setLoading('kakao');
+    localStorage.setItem('onri_last_login', 'kakao');
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'kakao',
@@ -66,6 +73,7 @@ export default function OnboardingPage() {
   const handleAppleLogin = async () => {
     console.log('[Auth] Apple 로그인 시도');
     setLoading('apple');
+    localStorage.setItem('onri_last_login', 'apple');
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'apple',
@@ -136,6 +144,7 @@ export default function OnboardingPage() {
       '[Auth] 이메일 로그인 성공:',
       data.user?.id?.slice(0, 8),
     );
+    localStorage.setItem('onri_last_login', 'email');
 
     const userId = data.user?.id;
     if (userId) {
@@ -197,31 +206,46 @@ export default function OnboardingPage() {
         <button
           onClick={handleKakaoLogin}
           disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-base font-semibold text-ink transition-colors hover:bg-gold-soft active:bg-gold-soft disabled:opacity-60"
+          className="relative flex w-full items-center justify-center gap-2 rounded-xl bg-gold py-3.5 text-base font-semibold text-ink transition-colors hover:bg-gold-soft active:bg-gold-soft disabled:opacity-60"
         >
           {loading === 'kakao' ? (
             <Loader2 size={18} className="animate-spin" />
           ) : null}
           카카오로 시작하기
+          {lastLogin === 'kakao' && (
+            <span className="absolute right-3 rounded-full bg-ink/15 px-2 py-0.5 text-[10px] font-medium text-ink/70">
+              최근 로그인
+            </span>
+          )}
         </button>
 
         <button
           onClick={handleAppleLogin}
           disabled={loading !== null}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-surface-secondary active:bg-surface-secondary disabled:opacity-60"
+          className="relative flex w-full items-center justify-center gap-2 rounded-xl border border-line bg-surface py-3.5 text-base font-semibold text-foreground transition-colors hover:bg-surface-secondary active:bg-surface-secondary disabled:opacity-60"
         >
           {loading === 'apple' ? (
             <Loader2 size={18} className="animate-spin" />
           ) : null}
           Apple로 시작하기
+          {lastLogin === 'apple' && (
+            <span className="absolute right-3 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-medium text-foreground/50">
+              최근 로그인
+            </span>
+          )}
         </button>
 
         <button
           onClick={() => setEmailOpen(true)}
           disabled={loading !== null}
-          className="w-full py-3 text-center text-sm text-gray transition-colors hover:text-foreground disabled:opacity-60"
+          className="relative w-full py-3 text-center text-sm text-gray transition-colors hover:text-foreground disabled:opacity-60"
         >
           이메일로 로그인
+          {lastLogin === 'email' && (
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-medium text-foreground/50">
+              최근 로그인
+            </span>
+          )}
         </button>
       </div>
 
