@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo, use } from 'react';
+import {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  use,
+  useCallback,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -21,14 +28,15 @@ import {
   Search,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { MOCK_CHAT_ROOMS, MOCK_MESSAGES } from '@/data/mock-chats';
-import { MOCK_PROFILES } from '@/data/mock-profiles';
+import { createClient } from '@/lib/supabase';
+import { useChatStore } from '@/store';
 import type { Message } from '@/types';
 
 const REPORT_REASONS = [
@@ -52,6 +60,14 @@ const REPORT_REASONS = [
   { id: 'OUTING', label: '아웃팅 · 개인정보 유출 시도', icon: Flag },
   { id: 'OTHER', label: '기타 (직접 입력)', icon: FileWarning },
 ];
+
+type PartnerInfo = {
+  id: string;
+  nickname: string;
+  age: number;
+  verification_status: string;
+  thumbnailUrl: string | null;
+};
 
 function formatMessageTime(dateStr: string) {
   const date = new Date(dateStr);
@@ -77,18 +93,22 @@ function shouldShowDateSeparator(
   prev: Message | null,
 ) {
   if (!prev) return true;
-  const currentDate = new Date(current.createdAt).toDateString();
-  const prevDate = new Date(prev.createdAt).toDateString();
+  const currentDate = new Date(current.created_at).toDateString();
+  const prevDate = new Date(prev.created_at).toDateString();
   return currentDate !== prevDate;
 }
 
-function shouldShowAvatar(current: Message, prev: Message | null) {
-  if (!prev) return current.senderId !== 'me';
-  if (current.senderId === 'me') return false;
-  if (prev.senderId !== current.senderId) return true;
+function shouldShowAvatar(
+  current: Message,
+  prev: Message | null,
+  myId: string,
+) {
+  if (!prev) return current.sender_id !== myId;
+  if (current.sender_id === myId) return false;
+  if (prev.sender_id !== current.sender_id) return true;
   const diff =
-    new Date(current.createdAt).getTime() -
-    new Date(prev.createdAt).getTime();
+    new Date(current.created_at).getTime() -
+    new Date(prev.created_at).getTime();
   return diff > 5 * 60 * 1000;
 }
 
@@ -102,14 +122,13 @@ export default function ChatRoomPage({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const room = MOCK_CHAT_ROOMS.find((r) => r.id === roomId);
-  const partnerId = room?.userIds.find((uid) => uid !== 'me');
-  const partner = MOCK_PROFILES.find((p) => p.id === partnerId);
-
-  const [messages, setMessages] = useState<Message[]>(
-    MOCK_MESSAGES[roomId] ?? [],
-  );
+  const { decrementUnread } = useChatStore();
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [partner, setPartner] = useState<PartnerInfo | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
   const [inputText, setInputText] = useState('');
+  const [sending, setSending] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState('');
@@ -144,31 +163,208 @@ export default function ChatRoomPage({
     }
   }, [searchIndex, searchResults]);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: 'instant',
+  const scrollToBottom = useCallback(() => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: 'instant',
+      });
     });
-  }, [messages]);
+  }, []);
 
-  const handleSend = () => {
-    const trimmed = inputText.trim();
-    if (!trimmed) return;
-    const newMsg: Message = {
-      id: `new-${Date.now()}`,
-      roomId,
-      senderId: 'me',
-      text: trimmed,
-      readAt: null,
-      createdAt: new Date().toISOString(),
+  const markAsRead = useCallback(
+    async (msgs: Message[]) => {
+      if (!currentUserId) return;
+      const supabase = createClient();
+      const unreadIds = msgs
+        .filter((m) => m.sender_id !== currentUserId && !m.read_at)
+        .map((m) => m.id);
+
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .in('id', unreadIds);
+      }
+    },
+    [currentUserId],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchChatData = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || !mounted) return;
+      setCurrentUserId(user.id);
+
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('id', roomId)
+        .single();
+
+      if (!room) {
+        setLoading(false);
+        return;
+      }
+
+      const partnerId =
+        room.user1_id === user.id ? room.user2_id : room.user1_id;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select(
+          'id, nickname, age, verification_status, visibility_age',
+        )
+        .eq('id', partnerId)
+        .single();
+
+      const { data: photo } = await supabase
+        .from('profile_photos')
+        .select('storage_path')
+        .eq('user_id', partnerId)
+        .eq('display_order', 0)
+        .single();
+
+      if (!mounted) return;
+
+      const ageVisible = profile?.visibility_age !== 'private';
+
+      setPartner({
+        id: partnerId,
+        nickname: profile?.nickname || '알 수 없음',
+        age: ageVisible ? profile?.age || 0 : 0,
+        verification_status: profile?.verification_status || 'none',
+        thumbnailUrl: photo?.storage_path || null,
+      });
+
+      const { data: msgs } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('room_id', roomId)
+        .order('created_at', { ascending: true });
+
+      const fetchedMessages = msgs || [];
+      if (!mounted) return;
+      setMessages(fetchedMessages);
+      setLoading(false);
+
+      setTimeout(() => scrollToBottom(), 100);
+
+      const unreadIds = fetchedMessages
+        .filter((m) => m.sender_id !== user.id && !m.read_at)
+        .map((m) => m.id);
+
+      if (unreadIds.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read_at: new Date().toISOString() })
+          .in('id', unreadIds);
+        if (mounted) decrementUnread(unreadIds.length);
+      }
     };
-    setMessages((prev) => [...prev, newMsg]);
+
+    fetchChatData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [roomId, scrollToBottom, decrementUnread]);
+
+  useEffect(() => {
+    if (!currentUserId || !roomId) return;
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel(`chat-room-${roomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const newMsg = payload.new as Message;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+          scrollToBottom();
+
+          if (newMsg.sender_id !== currentUserId) {
+            markAsRead([newMsg]);
+            decrementUnread(1);
+          }
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const updated = payload.new as Message;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === updated.id ? updated : m)),
+          );
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [
+    currentUserId,
+    roomId,
+    scrollToBottom,
+    markAsRead,
+    decrementUnread,
+  ]);
+
+  const handleSend = async () => {
+    const trimmed = inputText.trim();
+    if (!trimmed || sending || !currentUserId) return;
+
+    setSending(true);
+    const supabase = createClient();
+
+    const { error } = await supabase.from('messages').insert({
+      room_id: roomId,
+      sender_id: currentUserId,
+      text: trimmed,
+    });
+
+    if (error) {
+      toast.error('메시지 전송에 실패했어요');
+      console.error('[Chat] 메시지 전송 실패:', error);
+    }
+
     setInputText('');
+    setSending(false);
     inputRef.current?.focus();
   };
 
-  const handleReport = () => {
-    if (!reportReason) return;
+  const handleReport = async () => {
+    if (!reportReason || !partner) return;
+    const supabase = createClient();
+
+    await supabase.from('reports').insert({
+      reporter_id: currentUserId,
+      target_id: partner.id,
+      reason: reportReason,
+      detail: reportReason === 'OTHER' ? reportDetail : null,
+    });
+
     toast.success('신고가 접수되었어요', {
       description: '운영팀에서 검토 후 조치할게요',
       icon: <Flag size={16} className="text-gold" />,
@@ -178,8 +374,21 @@ export default function ChatRoomPage({
     setReportDetail('');
   };
 
-  const handleBlock = () => {
-    toast.success(`${partner?.nickname}님을 차단했어요`, {
+  const handleBlock = async () => {
+    if (!partner) return;
+    const supabase = createClient();
+
+    await supabase.from('blocks').insert({
+      blocker_id: currentUserId,
+      blocked_id: partner.id,
+    });
+
+    await supabase
+      .from('chat_rooms')
+      .update({ is_active: false })
+      .eq('id', roomId);
+
+    toast.success(`${partner.nickname}님을 차단했어요`, {
       description: '더 이상 대화할 수 없어요',
       icon: <Ban size={16} className="text-red-400" />,
     });
@@ -187,7 +396,15 @@ export default function ChatRoomPage({
     router.push('/chat');
   };
 
-  if (!room || !partner) {
+  if (loading) {
+    return (
+      <div className="flex h-dvh items-center justify-center bg-background">
+        <Loader2 size={28} className="animate-spin text-gold/40" />
+      </div>
+    );
+  }
+
+  if (!partner) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-background">
         <p className="text-foreground/50">채팅방을 찾을 수 없어요</p>
@@ -197,7 +414,6 @@ export default function ChatRoomPage({
 
   return (
     <div className="flex h-dvh flex-col bg-background">
-      {/* 상단 바 */}
       <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center justify-between px-4 pt-12 pb-3">
           <div className="flex items-center gap-3">
@@ -213,11 +429,11 @@ export default function ChatRoomPage({
             >
               <div className="relative">
                 <Avatar
-                  src={partner.thumbnailUrl || null}
+                  src={partner.thumbnailUrl}
                   name={partner.nickname}
                   size="sm"
                 />
-                {partner.verificationStatus === 'approved' && (
+                {partner.verification_status === 'approved' && (
                   <div className="absolute -right-0.5 -bottom-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-background">
                     <ShieldCheck size={9} className="text-gold" />
                   </div>
@@ -228,9 +444,11 @@ export default function ChatRoomPage({
                   <span className="text-sm font-semibold text-foreground">
                     {partner.nickname}
                   </span>
-                  <span className="text-[11px] text-foreground-soft">
-                    {partner.age}세
-                  </span>
+                  {partner.age > 0 && (
+                    <span className="text-[11px] text-foreground-soft">
+                      {partner.age}세
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
@@ -250,7 +468,6 @@ export default function ChatRoomPage({
               <Search size={16} />
             </button>
 
-            {/* 더보기 메뉴 */}
             <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
               <Dialog.Trigger asChild>
                 <button className="rounded-full p-1.5 text-foreground/50 transition-colors hover:bg-foreground/5 hover:text-foreground">
@@ -289,7 +506,6 @@ export default function ChatRoomPage({
           </div>
         </div>
 
-        {/* 메시지 검색 바 */}
         {searchOpen && (
           <div className="flex items-center gap-2 px-4 pb-3">
             <div className="flex flex-1 items-center gap-2.5 rounded-xl bg-surface px-3.5 py-2">
@@ -347,7 +563,6 @@ export default function ChatRoomPage({
         <div className="h-px bg-line" />
       </header>
 
-      {/* 안전 배너 */}
       <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-gold/5 px-3.5 py-2.5">
         <ShieldCheck size={14} className="shrink-0 text-gold/60" />
         <p className="text-[11px] text-foreground/35">
@@ -355,7 +570,6 @@ export default function ChatRoomPage({
         </p>
       </div>
 
-      {/* 메시지 영역 */}
       <div
         ref={scrollRef}
         className="flex-1 overflow-y-auto px-4 pt-3 pb-2"
@@ -366,14 +580,18 @@ export default function ChatRoomPage({
             const next =
               idx < messages.length - 1 ? messages[idx + 1] : null;
             const showDate = shouldShowDateSeparator(msg, prev);
-            const showAvatar = shouldShowAvatar(msg, prev);
-            const isMine = msg.senderId === 'me';
+            const showAvt = shouldShowAvatar(
+              msg,
+              prev,
+              currentUserId,
+            );
+            const isMine = msg.sender_id === currentUserId;
 
             const isLastInGroup =
               !next ||
-              next.senderId !== msg.senderId ||
-              new Date(next.createdAt).getTime() -
-                new Date(msg.createdAt).getTime() >
+              next.sender_id !== msg.sender_id ||
+              new Date(next.created_at).getTime() -
+                new Date(msg.created_at).getTime() >
                 5 * 60 * 1000;
 
             return (
@@ -381,20 +599,19 @@ export default function ChatRoomPage({
                 {showDate && (
                   <div className="flex justify-center py-4">
                     <span className="rounded-full bg-foreground/5 px-3.5 py-1 text-[11px] text-foreground-soft">
-                      {formatDateSeparator(msg.createdAt)}
+                      {formatDateSeparator(msg.created_at)}
                     </span>
                   </div>
                 )}
 
                 <div
-                  className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${showAvatar ? 'mt-3' : 'mt-0.5'}`}
+                  className={`flex ${isMine ? 'justify-end' : 'justify-start'} ${showAvt ? 'mt-3' : 'mt-0.5'}`}
                 >
-                  {/* 상대 아바타 */}
                   {!isMine && (
                     <div className="mr-2 w-8 shrink-0">
-                      {showAvatar && (
+                      {showAvt && partner && (
                         <Avatar
-                          src={partner.thumbnailUrl || null}
+                          src={partner.thumbnailUrl}
                           name={partner.nickname}
                           size="sm"
                         />
@@ -421,7 +638,7 @@ export default function ChatRoomPage({
                       >
                         {isMine && (
                           <span className="text-[10px] text-foreground-soft">
-                            {msg.readAt ? (
+                            {msg.read_at ? (
                               <CheckCheck
                                 size={12}
                                 className="text-gold/50"
@@ -435,7 +652,7 @@ export default function ChatRoomPage({
                           </span>
                         )}
                         <span className="text-[10px] text-foreground-dim">
-                          {formatMessageTime(msg.createdAt)}
+                          {formatMessageTime(msg.created_at)}
                         </span>
                       </div>
                     )}
@@ -447,7 +664,6 @@ export default function ChatRoomPage({
         </div>
       </div>
 
-      {/* 입력 영역 */}
       <div className="border-t border-line bg-background px-4 pt-3 pb-8">
         <div className="flex items-end gap-2">
           <div className="flex-1 rounded-2xl bg-surface">
@@ -472,7 +688,7 @@ export default function ChatRoomPage({
           </div>
           <button
             onClick={handleSend}
-            disabled={!inputText.trim()}
+            disabled={!inputText.trim() || sending}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
           >
             <Send size={18} />
@@ -480,7 +696,6 @@ export default function ChatRoomPage({
         </div>
       </div>
 
-      {/* 신고 다이얼로그 */}
       <Dialog.Root open={reportOpen} onOpenChange={setReportOpen}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />

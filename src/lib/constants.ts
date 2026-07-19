@@ -32,3 +32,39 @@ export const ATTENDANCE_REWARD = {
   STREAK_3: 1,
   STREAK_7: 3,
 } as const;
+
+export type HeartPackage = {
+  id: string;
+  amount: number;
+  price: number;
+  label: string;
+  popular?: boolean;
+  best?: boolean;
+};
+
+export const HEART_PACKAGES: HeartPackage[] = [
+  { id: 'h10', amount: 10, price: 2_500, label: '시작' },
+  {
+    id: 'h30',
+    amount: 30,
+    price: 5_900,
+    label: '인기',
+    popular: true,
+  },
+  { id: 'h60', amount: 60, price: 9_900, label: '알뜰하게' },
+  {
+    id: 'h120',
+    amount: 120,
+    price: 16_900,
+    label: '넉넉하게',
+    best: true,
+  },
+];
+
+export const HEART_PACKAGE_MAP = Object.fromEntries(
+  HEART_PACKAGES.map((p) => [p.id, p]),
+) as Record<string, HeartPackage>;
+
+export const PRICE_TO_PACKAGE = Object.fromEntries(
+  HEART_PACKAGES.map((p) => [p.price, p]),
+) as Record<number, HeartPackage>;

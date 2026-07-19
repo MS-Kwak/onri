@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import * as PortOne from '@portone/browser-sdk/v2';
 import {
   ArrowLeft,
   Heart,
@@ -21,33 +22,24 @@ import { useHeartStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { createClient } from '@/lib/supabase';
+import {
+  HEART_PACKAGES as PACKAGES,
+  type HeartPackage,
+} from '@/lib/constants';
 
-const HEART_PACKAGES = [
-  { id: 'h10', amount: 10, price: 2_500, label: '시작', icon: Heart },
-  {
-    id: 'h30',
-    amount: 30,
-    price: 5_900,
-    label: '인기',
-    icon: Star,
-    popular: true,
-  },
-  {
-    id: 'h60',
-    amount: 60,
-    price: 9_900,
-    label: '알뜰하게',
-    icon: Gem,
-  },
-  {
-    id: 'h120',
-    amount: 120,
-    price: 16_900,
-    label: '넉넉하게',
-    icon: Crown,
-    best: true,
-  },
-];
+const ICON_MAP: Record<string, typeof Heart> = {
+  h10: Heart,
+  h30: Star,
+  h60: Gem,
+  h120: Crown,
+};
+
+type HeartPackageWithIcon = HeartPackage & { icon: typeof Heart };
+
+const HEART_PACKAGES: HeartPackageWithIcon[] = PACKAGES.map((p) => ({
+  ...p,
+  icon: ICON_MAP[p.id] || Heart,
+}));
 
 const TYPE_LABELS: Record<string, string> = {
   signup_bonus: '가입 축하 하트',
@@ -120,47 +112,86 @@ export default function HeartsPage() {
 
     setIsPurchasing(true);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error('로그인이 필요합니다');
+        setIsPurchasing(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, phone')
+        .eq('id', user.id)
+        .single();
+
+      const paymentId = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+      const response = await PortOne.requestPayment({
+        storeId: process.env.NEXT_PUBLIC_PORTONE_STORE_ID!,
+        channelKey:
+          process.env.NEXT_PUBLIC_PORTONE_PAYMENT_CHANNEL_KEY!,
+        paymentId,
+        orderName: `온리 하트 ${pkg.amount}개`,
+        totalAmount: pkg.price,
+        currency: 'CURRENCY_KRW',
+        payMethod: 'CARD',
+        customer: {
+          fullName: profile?.name || undefined,
+          email: user.email || undefined,
+          phoneNumber: profile?.phone || undefined,
+        },
+        windowType: {
+          pc: 'IFRAME',
+          mobile: 'REDIRECTION',
+        },
+        redirectUrl: `${window.location.origin}/my/hearts`,
+      });
+
+      if (!response || response.code != null) {
+        if (response?.code === 'USER_CANCELLED') {
+          setIsPurchasing(false);
+          return;
+        }
+        throw new Error(response?.message || '결제에 실패했습니다');
+      }
+
+      const verifyRes = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentId }),
+      });
+
+      const result = await verifyRes.json();
+
+      if (!verifyRes.ok) {
+        throw new Error(result.error || '결제 검증에 실패했습니다');
+      }
+
+      setBalance(result.balance);
+      setSelectedPkg(null);
+      toast.success(`하트 ${pkg.amount}개가 충전되었어요`, {
+        icon: <Heart size={16} className="fill-gold text-gold" />,
+      });
+
+      const { data: txData } = await supabase
+        .from('heart_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (txData) setTransactions(txData);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : '결제에 실패했습니다';
+      toast.error(message);
+    } finally {
       setIsPurchasing(false);
-      return;
     }
-
-    const { error } = await supabase
-      .from('hearts')
-      .update({ balance: balance + pkg.amount })
-      .eq('user_id', user.id);
-
-    if (error) {
-      toast.error('충전에 실패했어요');
-      setIsPurchasing(false);
-      return;
-    }
-
-    await supabase.from('heart_transactions').insert({
-      user_id: user.id,
-      amount: pkg.amount,
-      type: 'purchase',
-      description: `하트 ${pkg.amount}개 충전`,
-    });
-
-    setBalance(balance + pkg.amount);
-    setIsPurchasing(false);
-    setSelectedPkg(null);
-    toast.success(`하트 ${pkg.amount}개가 충전되었어요`, {
-      icon: <Heart size={16} className="fill-gold text-gold" />,
-    });
-
-    const { data: txData } = await supabase
-      .from('heart_transactions')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(20);
-    if (txData) setTransactions(txData);
   };
 
   return (

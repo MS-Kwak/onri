@@ -59,17 +59,32 @@ export type HeartSend = {
 
 export type ChatRoom = {
   id: string;
-  userIds: [string, string];
-  createdAt: string;
+  user1_id: string;
+  user2_id: string;
+  signal_id: string | null;
+  is_active: boolean;
+  created_at: string;
+};
+
+export type ChatRoomWithPartner = ChatRoom & {
+  partner: {
+    id: string;
+    nickname: string;
+    age: number;
+    verification_status: VerificationStatus;
+    thumbnailUrl: string | null;
+  };
+  lastMessage: Message | null;
+  unreadCount: number;
 };
 
 export type Message = {
   id: string;
-  roomId: string;
-  senderId: string;
+  room_id: string;
+  sender_id: string;
   text: string;
-  readAt: string | null;
-  createdAt: string;
+  read_at: string | null;
+  created_at: string;
 };
 
 export type Attendance = {

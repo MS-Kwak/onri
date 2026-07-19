@@ -293,6 +293,28 @@ export default function SignalPage() {
     }
   };
 
+  const handleChat = async (otherUserId: string) => {
+    if (!currentUserId) return;
+    const supabase = createClient();
+    const u1 =
+      otherUserId < currentUserId ? otherUserId : currentUserId;
+    const u2 =
+      otherUserId < currentUserId ? currentUserId : otherUserId;
+
+    const { data: room } = await supabase
+      .from('chat_rooms')
+      .select('id')
+      .eq('user1_id', u1)
+      .eq('user2_id', u2)
+      .single();
+
+    if (room) {
+      router.push(`/chat/${room.id}`);
+    } else {
+      toast.error('채팅방을 찾을 수 없어요');
+    }
+  };
+
   const signals =
     activeTab === 'received' ? receivedSignals : groupedSentSignals;
   const pendingSignals = signals.filter(
@@ -405,19 +427,7 @@ export default function SignalPage() {
                     onAccept={handleAccept}
                     onDecline={handleDecline}
                     onProfile={(id) => router.push(`/profile/${id}`)}
-                    onChat={(fromUserId) => {
-                      const finalU1 =
-                        currentUserId && fromUserId < currentUserId
-                          ? fromUserId
-                          : currentUserId;
-                      const finalU2 =
-                        currentUserId && fromUserId < currentUserId
-                          ? currentUserId
-                          : fromUserId;
-                      router.push(
-                        `/chat?u1=${finalU1}&u2=${finalU2}`,
-                      );
-                    }}
+                    onChat={handleChat}
                   />
                 ))}
               </section>
@@ -439,19 +449,7 @@ export default function SignalPage() {
                     onAccept={handleAccept}
                     onDecline={handleDecline}
                     onProfile={(id) => router.push(`/profile/${id}`)}
-                    onChat={(fromUserId) => {
-                      const finalU1 =
-                        currentUserId && fromUserId < currentUserId
-                          ? fromUserId
-                          : currentUserId;
-                      const finalU2 =
-                        currentUserId && fromUserId < currentUserId
-                          ? currentUserId
-                          : fromUserId;
-                      router.push(
-                        `/chat?u1=${finalU1}&u2=${finalU2}`,
-                      );
-                    }}
+                    onChat={handleChat}
                   />
                 ))}
               </section>
