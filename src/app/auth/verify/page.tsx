@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as PortOne from '@portone/browser-sdk/v2';
 import {
@@ -21,22 +21,25 @@ type VerifyState =
   | 'success'
   | 'error';
 
-export default function VerifyPage() {
-  const router = useRouter();
+function LoginParamHandler() {
   const searchParams = useSearchParams();
-  const [state, setState] = useState<VerifyState>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [verifiedInfo, setVerifiedInfo] = useState<{
-    name: string;
-    age: number;
-  } | null>(null);
-
   useEffect(() => {
     const loginProvider = searchParams.get('login');
     if (loginProvider) {
       localStorage.setItem('onri_last_login', loginProvider);
     }
   }, [searchParams]);
+  return null;
+}
+
+export default function VerifyPage() {
+  const router = useRouter();
+  const [state, setState] = useState<VerifyState>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [verifiedInfo, setVerifiedInfo] = useState<{
+    name: string;
+    age: number;
+  } | null>(null);
 
   const handleVerify = async () => {
     setState('verifying');
@@ -95,6 +98,9 @@ export default function VerifyPage() {
 
   return (
     <main className="flex min-h-dvh flex-col bg-background">
+      <Suspense>
+        <LoginParamHandler />
+      </Suspense>
       {/* 고정 헤더 */}
       <header className="sticky top-0 z-40 bg-background">
         <div className="flex items-center justify-between px-5 pt-12 pb-3">

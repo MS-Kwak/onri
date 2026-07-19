@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -37,9 +37,30 @@ const REGIONS = [
 ];
 const AGE_RANGES = ['전체', '20대', '30대', '40대', '50대'];
 
-export default function HomePage() {
-  const router = useRouter();
+function LoginParamHandler() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  useEffect(() => {
+    const loginProvider = searchParams.get('login');
+    if (loginProvider) {
+      localStorage.setItem('onri_last_login', loginProvider);
+      router.replace('/home', { scroll: false });
+    }
+  }, [searchParams, router]);
+  return null;
+}
+
+export default function HomeWrapper() {
+  return (
+    <Suspense>
+      <LoginParamHandler />
+      <HomePage />
+    </Suspense>
+  );
+}
+
+function HomePage() {
+  const router = useRouter();
   const { balance, setBalance } = useHeartStore();
   const { isDark } = useTheme();
 
@@ -52,14 +73,6 @@ export default function HomePage() {
     thumbnailUrl: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loginProvider = searchParams.get('login');
-    if (loginProvider) {
-      localStorage.setItem('onri_last_login', loginProvider);
-      router.replace('/home', { scroll: false });
-    }
-  }, [searchParams, router]);
 
   useEffect(() => {
     const fetchData = async () => {
