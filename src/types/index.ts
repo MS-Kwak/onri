@@ -75,6 +75,7 @@ export type ChatRoomWithPartner = ChatRoom & {
     verification_status: VerificationStatus;
     thumbnailUrl: string | null;
   };
+  isBlocked?: boolean;
   lastMessage: Message | null;
   unreadCount: number;
 };

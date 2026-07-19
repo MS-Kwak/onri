@@ -9,6 +9,7 @@ import {
   Sparkles,
   X,
   Loader2,
+  Ban,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui/avatar';
 import { BottomTab } from '@/components/ui/bottom-tab';
@@ -59,7 +60,6 @@ export default function ChatListPage() {
       .from('chat_rooms')
       .select('*')
       .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-      .eq('is_active', true)
       .order('created_at', { ascending: false });
 
     if (!chatRooms || chatRooms.length === 0) {
@@ -85,6 +85,7 @@ export default function ChatListPage() {
         age: number;
         verification_status: string;
         thumbnailUrl: string | null;
+        isBlocked: boolean;
       }
     > = partnerData?.partners || {};
 
@@ -121,6 +122,8 @@ export default function ChatListPage() {
           room.user1_id === user.id ? room.user2_id : room.user1_id;
         const pInfo = partnersMap[partnerId];
 
+        const blocked = pInfo?.isBlocked || false;
+
         return {
           ...room,
           partner: {
@@ -130,8 +133,9 @@ export default function ChatListPage() {
             verification_status: pInfo?.verification_status || 'none',
             thumbnailUrl: pInfo?.thumbnailUrl || null,
           },
+          isBlocked: blocked,
           lastMessage: lastMessagesResults[i]?.data || null,
-          unreadCount: unreadCountsResults[i]?.count || 0,
+          unreadCount: blocked ? 0 : (unreadCountsResults[i]?.count || 0),
         };
       },
     );
@@ -315,7 +319,9 @@ export default function ChatListPage() {
               <button
                 key={room.id}
                 onClick={() => router.push(`/chat/${room.id}`)}
-                className="flex items-center gap-3.5 rounded-2xl px-1 py-3.5 text-left transition-colors hover:bg-foreground/8 active:bg-foreground/5"
+                className={`flex items-center gap-3.5 rounded-2xl px-1 py-3.5 text-left transition-colors hover:bg-foreground/8 active:bg-foreground/5 ${
+                  room.isBlocked ? 'opacity-50' : ''
+                }`}
               >
                 <div className="relative">
                   <Avatar
@@ -323,12 +329,16 @@ export default function ChatListPage() {
                     name={room.partner.nickname}
                     size="lg"
                   />
-                  {room.partner.verification_status ===
-                    'approved' && (
+                  {room.isBlocked ? (
+                    <div className="absolute -right-0.5 -bottom-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-background">
+                      <Ban size={11} className="text-foreground-dim" />
+                    </div>
+                  ) : room.partner.verification_status ===
+                    'approved' ? (
                     <div className="absolute -right-0.5 -bottom-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-background">
                       <ShieldCheck size={12} className="text-gold" />
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -337,7 +347,7 @@ export default function ChatListPage() {
                       <span className="text-sm font-semibold text-foreground">
                         {room.partner.nickname}
                       </span>
-                      {room.partner.age > 0 && (
+                      {!room.isBlocked && room.partner.age > 0 && (
                         <span className="text-[11px] text-foreground-soft">
                           {room.partner.age}세
                         </span>
@@ -350,11 +360,18 @@ export default function ChatListPage() {
                     )}
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="truncate pr-2 text-[13px] text-foreground/45">
-                      {room.lastMessage
-                        ? room.lastMessage.text
-                        : '대화를 시작해보세요'}
-                    </p>
+                    {room.isBlocked ? (
+                      <p className="flex items-center gap-1 text-[13px] text-foreground/30">
+                        <Ban size={11} />
+                        차단된 대화
+                      </p>
+                    ) : (
+                      <p className="truncate pr-2 text-[13px] text-foreground/45">
+                        {room.lastMessage
+                          ? room.lastMessage.text
+                          : '대화를 시작해보세요'}
+                      </p>
+                    )}
                     {room.unreadCount > 0 && (
                       <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-gold px-1.5 text-[10px] font-bold text-ink">
                         {room.unreadCount}
