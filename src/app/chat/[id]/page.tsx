@@ -216,8 +216,6 @@ export default function ChatRoomPage({
       const partnerId =
         room.user1_id === user.id ? room.user2_id : room.user1_id;
 
-      setIsRoomActive(room.is_active !== false);
-
       const partnerRes = await fetch('/api/chat-partner', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -227,6 +225,10 @@ export default function ChatRoomPage({
       const partnerInfo = partnerData?.partners?.[partnerId];
 
       if (!mounted) return;
+
+      const roomActive =
+        room.is_active !== false && !partnerInfo?.isBlocked;
+      setIsRoomActive(roomActive);
 
       setPartner({
         id: partnerId,

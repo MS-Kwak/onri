@@ -46,6 +46,24 @@ export async function POST(request: NextRequest) {
       photoMap.set(p.user_id, p.storage_path);
   });
 
+  const { data: blocks } = await admin
+    .from('blocks')
+    .select('blocker_id, blocked_id')
+    .or(
+      partnerIds
+        .map(
+          (pid: string) =>
+            `and(blocker_id.eq.${user.id},blocked_id.eq.${pid}),and(blocker_id.eq.${pid},blocked_id.eq.${user.id})`,
+        )
+        .join(','),
+    );
+
+  const blockedSet = new Set<string>();
+  blocks?.forEach((b) => {
+    if (b.blocker_id === user.id) blockedSet.add(b.blocked_id);
+    else blockedSet.add(b.blocker_id);
+  });
+
   const result: Record<
     string,
     {
@@ -54,6 +72,7 @@ export async function POST(request: NextRequest) {
       age: number;
       verification_status: string;
       thumbnailUrl: string | null;
+      isBlocked: boolean;
     }
   > = {};
 
@@ -65,6 +84,7 @@ export async function POST(request: NextRequest) {
       age: ageVisible ? p.age || 0 : 0,
       verification_status: p.verification_status || 'none',
       thumbnailUrl: photoMap.get(p.id) || null,
+      isBlocked: blockedSet.has(p.id),
     };
   });
 
