@@ -773,7 +773,7 @@ function MyPage() {
 
             <div className="mt-5 flex gap-3">
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!withdrawReason) {
                     toast.error('탈퇴 이유를 선택해주세요');
                     return;
@@ -785,14 +785,36 @@ function MyPage() {
                     toast.error('기타 이유를 입력해주세요');
                     return;
                   }
-                  setWithdrawOpen(false);
-                  setWithdrawReason('');
-                  setWithdrawDetail('');
-                  toast.success('회원탈퇴가 완료되었어요', {
-                    description:
-                      '그동안 온리를 이용해주셔서 감사합니다.',
-                  });
-                  router.push('/');
+
+                  try {
+                    const supabase = createClient();
+                    const { error } = await supabase.rpc(
+                      'withdraw_user',
+                      {
+                        p_reason: withdrawReason,
+                        p_detail:
+                          withdrawReason === 'OTHER'
+                            ? withdrawDetail.trim()
+                            : null,
+                      },
+                    );
+
+                    if (error) {
+                      console.error('[Withdraw]', error);
+                      toast.error('탈퇴 처리 중 오류가 발생했어요');
+                      return;
+                    }
+
+                    await supabase.auth.signOut();
+                    setWithdrawOpen(false);
+                    toast.success('회원탈퇴가 완료되었어요', {
+                      description:
+                        '그동안 온리를 이용해주셔서 감사합니다.',
+                    });
+                    router.push('/');
+                  } catch {
+                    toast.error('탈퇴 처리 중 오류가 발생했어요');
+                  }
                 }}
                 className="flex-1 rounded-xl border border-red-500/30 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/5"
               >

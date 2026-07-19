@@ -257,9 +257,10 @@ export default function ProfileDetailPage() {
 
     await supabase.from('reports').insert({
       reporter_id: user.id,
-      reported_id: profileId,
+      target_id: profileId,
       reason: reportReason,
       detail: reportReason === 'OTHER' ? reportDetail.trim() : null,
+      context: 'profile',
     });
 
     setShowReport(false);

@@ -363,6 +363,7 @@ export default function ChatRoomPage({
       target_id: partner.id,
       reason: reportReason,
       detail: reportReason === 'OTHER' ? reportDetail : null,
+      context: 'chat',
     });
 
     toast.success('신고가 접수되었어요', {

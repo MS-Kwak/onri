@@ -112,6 +112,10 @@ export default function ProfileEditPage() {
   const [pageLoading, setPageLoading] = useState(true);
 
   const [photos, setPhotos] = useState<string[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<Map<string, File>>(
+    new Map(),
+  );
+  const [originalPhotos, setOriginalPhotos] = useState<string[]>([]);
   const [nickname, setNickname] = useState('');
   const [nicknameDup, setNicknameDup] = useState<boolean | null>(
     null,
@@ -220,11 +224,11 @@ export default function ProfileEditPage() {
       }
 
       if (photosRes.data) {
-        setPhotos(
-          photosRes.data.map(
-            (ph: { storage_path: string }) => ph.storage_path,
-          ),
+        const paths = photosRes.data.map(
+          (ph: { storage_path: string }) => ph.storage_path,
         );
+        setPhotos(paths);
+        setOriginalPhotos(paths);
       }
 
       setPageLoading(false);
@@ -238,15 +242,30 @@ export default function ProfileEditPage() {
     const files = e.target.files;
     if (!files) return;
     const remaining = MAX_PHOTOS - photos.length;
-    const newPhotos = Array.from(files)
-      .slice(0, remaining)
-      .map((file) => URL.createObjectURL(file));
-    setPhotos((prev) => [...prev, ...newPhotos]);
+    const selected = Array.from(files).slice(0, remaining);
+    const newEntries: { url: string; file: File }[] = selected.map(
+      (file) => ({ url: URL.createObjectURL(file), file }),
+    );
+    setPhotos((prev) => [...prev, ...newEntries.map((e) => e.url)]);
+    setPendingFiles((prev) => {
+      const next = new Map(prev);
+      newEntries.forEach(({ url, file }) => next.set(url, file));
+      return next;
+    });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handlePhotoRemove = (index: number) => {
+    const removed = photos[index];
     setPhotos((prev) => prev.filter((_, i) => i !== index));
+    if (removed?.startsWith('blob:')) {
+      URL.revokeObjectURL(removed);
+      setPendingFiles((prev) => {
+        const next = new Map(prev);
+        next.delete(removed);
+        return next;
+      });
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -353,6 +372,63 @@ export default function ProfileEditPage() {
         toast.error('저장에 실패했어요');
         setSaving(false);
         return;
+      }
+
+      const deletedPhotos = originalPhotos.filter(
+        (p) => !photos.includes(p),
+      );
+      for (const path of deletedPhotos) {
+        const storagePath = path.includes('/profiles/')
+          ? path.split('/profiles/').pop()
+          : null;
+        if (storagePath) {
+          await supabase.storage
+            .from('profiles')
+            .remove([storagePath]);
+        }
+        await supabase
+          .from('profile_photos')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('storage_path', path);
+      }
+
+      const finalPaths: string[] = [];
+      for (const src of photos) {
+        if (src.startsWith('blob:')) {
+          const file = pendingFiles.get(src);
+          if (!file) continue;
+          const ext = file.name.split('.').pop() || 'jpg';
+          const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 6)}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from('profiles')
+            .upload(fileName, file, { upsert: true });
+          if (upErr) {
+            console.error('[ProfileEdit] 사진 업로드 실패:', upErr);
+            continue;
+          }
+          const { data: urlData } = supabase.storage
+            .from('profiles')
+            .getPublicUrl(fileName);
+          finalPaths.push(urlData.publicUrl);
+        } else {
+          finalPaths.push(src);
+        }
+      }
+
+      await supabase
+        .from('profile_photos')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (finalPaths.length > 0) {
+        await supabase.from('profile_photos').insert(
+          finalPaths.map((path, i) => ({
+            user_id: user.id,
+            storage_path: path,
+            display_order: i,
+          })),
+        );
       }
 
       toast.success('프로필이 저장되었어요');
