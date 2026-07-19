@@ -328,7 +328,8 @@ export default function ChatRoomPage({
 
   const handleSend = async () => {
     const trimmed = inputText.trim();
-    if (!trimmed || sending || !currentUserId) return;
+    if (!trimmed || sending || !currentUserId || !isRoomActive)
+      return;
 
     setSending(true);
     const supabase = createClient();
