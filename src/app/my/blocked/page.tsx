@@ -29,68 +29,16 @@ export default function BlockedPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: blocks } = await supabase
-        .from('blocks')
-        .select('id, blocked_id, created_at')
-        .eq('blocker_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (!blocks || blocks.length === 0) {
+      try {
+        const res = await fetch('/api/blocked-users');
+        if (!res.ok) throw new Error('fetch failed');
+        const { users } = await res.json();
+        setBlockedUsers(users || []);
+      } catch {
+        toast.error('차단 목록을 불러올 수 없어요');
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const blockedIds = blocks.map(
-        (b: { blocked_id: string }) => b.blocked_id,
-      );
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, nickname')
-        .in('id', blockedIds);
-
-      const { data: photos } = await supabase
-        .from('profile_photos')
-        .select('user_id, storage_path')
-        .in('user_id', blockedIds)
-        .order('display_order');
-
-      const photoMap = new Map<string, string>();
-      photos?.forEach(
-        (p: { user_id: string; storage_path: string }) => {
-          if (!photoMap.has(p.user_id))
-            photoMap.set(p.user_id, p.storage_path);
-        },
-      );
-
-      const profileMap = new Map<string, string>();
-      profiles?.forEach((p: { id: string; nickname: string }) => {
-        profileMap.set(p.id, p.nickname);
-      });
-
-      const mapped: BlockedUser[] = blocks.map(
-        (b: {
-          id: string;
-          blocked_id: string;
-          created_at: string;
-        }) => ({
-          blockId: b.id,
-          id: b.blocked_id,
-          nickname: profileMap.get(b.blocked_id) || '알 수 없음',
-          thumbnailUrl: photoMap.get(b.blocked_id) || '',
-          blockedAt: new Date(b.created_at)
-            .toISOString()
-            .slice(0, 10),
-        }),
-      );
-
-      setBlockedUsers(mapped);
-      setLoading(false);
     }
     load();
   }, []);
