@@ -112,6 +112,7 @@ export default function ProfileDetailPage() {
         isVerified: p.verification_status === 'approved',
         verificationStatus: p.verification_status,
         identity: p.identity as Identity,
+        identityOther: p.identity_other || '',
         lookingFor: (p.looking_for || []) as RelationGoal[],
         bio: p.bio || '',
         height: p.height,
@@ -414,7 +415,9 @@ export default function ProfileDetailPage() {
         {/* 정체성 · 관계목적 태그 */}
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <span className="rounded-lg bg-gold/10 px-3 py-1 text-xs font-semibold tracking-wide text-gold">
-            {IDENTITY_LABELS[profile.identity]}
+            {profile.identity === 'OTHER' && profile.identityOther
+              ? profile.identityOther
+              : IDENTITY_LABELS[profile.identity]}
           </span>
           {profile.lookingFor.map((goal) => (
             <span

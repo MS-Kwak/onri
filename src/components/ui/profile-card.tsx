@@ -98,7 +98,9 @@ export function ProfileCard({
 
         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
           <span className="rounded-md bg-gold/10 px-2 py-0.5 text-[11px] font-semibold tracking-wide text-gold">
-            {IDENTITY_LABELS[profile.identity]}
+            {profile.identity === 'OTHER' && profile.identityOther
+              ? profile.identityOther
+              : IDENTITY_LABELS[profile.identity]}
           </span>
           {profile.lookingFor.length > 0 && (
             <span className="text-[10px] text-foreground-dim">|</span>

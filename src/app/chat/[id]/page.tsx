@@ -611,11 +611,17 @@ export default function ChatRoomPage({
                   {!isMine && (
                     <div className="mr-2 w-8 shrink-0">
                       {showAvt && partner && (
-                        <Avatar
-                          src={partner.thumbnailUrl}
-                          name={partner.nickname}
-                          size="sm"
-                        />
+                        <button
+                          onClick={() =>
+                            router.push(`/profile/${partner.id}`)
+                          }
+                        >
+                          <Avatar
+                            src={partner.thumbnailUrl}
+                            name={partner.nickname}
+                            size="sm"
+                          />
+                        </button>
                       )}
                     </div>
                   )}

@@ -139,6 +139,7 @@ function HomePage() {
           isVerified: p.verification_status === 'approved',
           verificationStatus: p.verification_status,
           identity: p.identity as Identity,
+          identityOther: p.identity_other || '',
           lookingFor: (p.looking_for || []) as RelationGoal[],
           bio: p.bio || '',
           height: p.height,

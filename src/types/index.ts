@@ -25,6 +25,7 @@ export type Profile = {
   isVerified: boolean;
   verificationStatus: VerificationStatus;
   identity: Identity;
+  identityOther?: string;
   lookingFor: RelationGoal[];
   bio: string;
   height: number | null;
