@@ -44,10 +44,8 @@ export async function GET(
   const { data: block } = await admin
     .from('blocks')
     .select('id')
-    .or(
-      `and(blocker_id.eq.${user.id},blocked_id.eq.${profileId}),and(blocker_id.eq.${profileId},blocked_id.eq.${user.id})`,
-    )
-    .limit(1)
+    .eq('blocker_id', user.id)
+    .eq('blocked_id', profileId)
     .maybeSingle();
 
   return NextResponse.json({

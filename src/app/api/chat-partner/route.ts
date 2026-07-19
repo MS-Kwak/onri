@@ -58,10 +58,9 @@ export async function POST(request: NextRequest) {
         .join(','),
     );
 
-  const blockedSet = new Set<string>();
+  const iBlockedSet = new Set<string>();
   blocks?.forEach((b) => {
-    if (b.blocker_id === user.id) blockedSet.add(b.blocked_id);
-    else blockedSet.add(b.blocker_id);
+    if (b.blocker_id === user.id) iBlockedSet.add(b.blocked_id);
   });
 
   const result: Record<
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
       age: ageVisible ? p.age || 0 : 0,
       verification_status: p.verification_status || 'none',
       thumbnailUrl: photoMap.get(p.id) || null,
-      isBlocked: blockedSet.has(p.id),
+      isBlocked: iBlockedSet.has(p.id),
     };
   });
 

@@ -226,8 +226,7 @@ export default function ChatRoomPage({
 
       if (!mounted) return;
 
-      const roomActive =
-        room.is_active !== false && !partnerInfo?.isBlocked;
+      const roomActive = !partnerInfo?.isBlocked;
       setIsRoomActive(roomActive);
 
       setPartner({
