@@ -72,25 +72,21 @@ export default function ChatListPage() {
       r.user1_id === user.id ? r.user2_id : r.user1_id,
     );
 
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select(
-        'id, nickname, age, verification_status, visibility_age',
-      )
-      .in('id', partnerIds);
-
-    const { data: photos } = await supabase
-      .from('profile_photos')
-      .select('user_id, storage_path')
-      .in('user_id', partnerIds)
-      .eq('display_order', 0);
-
-    const profileMap = new Map(
-      (profiles || []).map((p) => [p.id, p]),
-    );
-    const photoMap = new Map(
-      (photos || []).map((p) => [p.user_id, p.storage_path]),
-    );
+    const partnerRes = await fetch('/api/chat-partner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partnerIds }),
+    });
+    const partnerData = await partnerRes.json();
+    const partnersMap: Record<
+      string,
+      {
+        nickname: string;
+        age: number;
+        verification_status: string;
+        thumbnailUrl: string | null;
+      }
+    > = partnerData?.partners || {};
 
     const roomIds = chatRooms.map((r) => r.id);
 
@@ -123,20 +119,16 @@ export default function ChatListPage() {
       (room, i) => {
         const partnerId =
           room.user1_id === user.id ? room.user2_id : room.user1_id;
-        const profile = profileMap.get(partnerId);
-        const photoPath = photoMap.get(partnerId);
-
-        const ageVisible = profile?.visibility_age !== 'private';
+        const pInfo = partnersMap[partnerId];
 
         return {
           ...room,
           partner: {
             id: partnerId,
-            nickname: profile?.nickname || '알 수 없음',
-            age: ageVisible ? profile?.age || 0 : 0,
-            verification_status:
-              profile?.verification_status || 'none',
-            thumbnailUrl: photoPath || null,
+            nickname: pInfo?.nickname || '탈퇴한 유저',
+            age: pInfo?.age || 0,
+            verification_status: pInfo?.verification_status || 'none',
+            thumbnailUrl: pInfo?.thumbnailUrl || null,
           },
           lastMessage: lastMessagesResults[i]?.data || null,
           unreadCount: unreadCountsResults[i]?.count || 0,

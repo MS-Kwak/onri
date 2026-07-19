@@ -137,6 +137,7 @@ export default function ChatRoomPage({
   const [searchQuery, setSearchQuery] = useState('');
   const [searchIndex, setSearchIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [isRoomActive, setIsRoomActive] = useState(true);
 
   const searchResults = useMemo(
     () =>
@@ -215,31 +216,25 @@ export default function ChatRoomPage({
       const partnerId =
         room.user1_id === user.id ? room.user2_id : room.user1_id;
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select(
-          'id, nickname, age, verification_status, visibility_age',
-        )
-        .eq('id', partnerId)
-        .single();
+      setIsRoomActive(room.is_active !== false);
 
-      const { data: photo } = await supabase
-        .from('profile_photos')
-        .select('storage_path')
-        .eq('user_id', partnerId)
-        .eq('display_order', 0)
-        .single();
+      const partnerRes = await fetch('/api/chat-partner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerIds: [partnerId] }),
+      });
+      const partnerData = await partnerRes.json();
+      const partnerInfo = partnerData?.partners?.[partnerId];
 
       if (!mounted) return;
 
-      const ageVisible = profile?.visibility_age !== 'private';
-
       setPartner({
         id: partnerId,
-        nickname: profile?.nickname || '알 수 없음',
-        age: ageVisible ? profile?.age || 0 : 0,
-        verification_status: profile?.verification_status || 'none',
-        thumbnailUrl: photo?.storage_path || null,
+        nickname: partnerInfo?.nickname || '탈퇴한 유저',
+        age: partnerInfo?.age || 0,
+        verification_status:
+          partnerInfo?.verification_status || 'none',
+        thumbnailUrl: partnerInfo?.thumbnailUrl || null,
       });
 
       const { data: msgs } = await supabase
@@ -389,12 +384,12 @@ export default function ChatRoomPage({
       .update({ is_active: false })
       .eq('id', roomId);
 
+    setIsRoomActive(false);
+    setMenuOpen(false);
     toast.success(`${partner.nickname}님을 차단했어요`, {
       description: '더 이상 대화할 수 없어요',
       icon: <Ban size={16} className="text-red-400" />,
     });
-    setMenuOpen(false);
-    router.push('/chat');
   };
 
   if (loading) {
@@ -671,37 +666,48 @@ export default function ChatRoomPage({
         </div>
       </div>
 
-      <div className="border-t border-line bg-background px-4 pt-3 pb-8">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 rounded-2xl bg-surface">
-            <textarea
-              ref={inputRef}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={(e) => {
-                if (
-                  e.key === 'Enter' &&
-                  !e.shiftKey &&
-                  !e.nativeEvent.isComposing
-                ) {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
-              placeholder="메시지를 입력하세요..."
-              rows={1}
-              className="max-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:outline-none"
-            />
+      {!isRoomActive ? (
+        <div className="border-t border-line bg-background px-4 pt-4 pb-8">
+          <div className="flex items-center justify-center gap-2 rounded-2xl bg-foreground/5 py-3.5">
+            <Ban size={15} className="text-foreground-dim" />
+            <span className="text-sm text-foreground-dim">
+              차단된 상대와는 대화할 수 없어요
+            </span>
           </div>
-          <button
-            onClick={handleSend}
-            disabled={!inputText.trim() || sending}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
-          >
-            <Send size={18} />
-          </button>
         </div>
-      </div>
+      ) : (
+        <div className="border-t border-line bg-background px-4 pt-3 pb-8">
+          <div className="flex items-end gap-2">
+            <div className="flex-1 rounded-2xl bg-surface">
+              <textarea
+                ref={inputRef}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (
+                    e.key === 'Enter' &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                placeholder="메시지를 입력하세요..."
+                rows={1}
+                className="max-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:outline-none"
+              />
+            </div>
+            <button
+              onClick={handleSend}
+              disabled={!inputText.trim() || sending}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
+            >
+              <Send size={18} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <Dialog.Root open={reportOpen} onOpenChange={setReportOpen}>
         <Dialog.Portal>

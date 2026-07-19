@@ -72,6 +72,7 @@ export default function ProfileDetailPage() {
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
   const [reportReason, setReportReason] = useState('');
   const [reportDetail, setReportDetail] = useState('');
   const { balance, setBalance } = useHeartStore();
@@ -85,24 +86,18 @@ export default function ProfileDetailPage() {
 
       setIsMyProfile(user?.id === profileId);
 
-      const { data: p } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', profileId)
-        .single();
-
-      if (!p) {
+      const profileRes = await fetch(`/api/profile/${profileId}`);
+      if (!profileRes.ok) {
         setLoading(false);
         return;
       }
+      const {
+        profile: p,
+        photos,
+        isBlocked: blocked,
+      } = await profileRes.json();
 
-      const { data: photos } = await supabase
-        .from('profile_photos')
-        .select('storage_path')
-        .eq('user_id', profileId)
-        .order('display_order')
-        .limit(1);
-
+      setIsBlocked(blocked);
       setProfile({
         id: p.id,
         nickname: p.nickname,
@@ -160,7 +155,7 @@ export default function ProfileDetailPage() {
   const visibleAge = profile?.visibility.age === 'public';
 
   const canSendSignal =
-    !sending && !isMatched && signalCount < MAX_SIGNALS;
+    !sending && !isMatched && !isBlocked && signalCount < MAX_SIGNALS;
 
   const handleSendHeart = async () => {
     if (!canSendSignal) return;
@@ -559,7 +554,12 @@ export default function ProfileDetailPage() {
                   : 'bg-gold text-ink active:scale-[0.98] hover:bg-gold/90'
             }`}
           >
-            {sending ? (
+            {isBlocked ? (
+              <>
+                <Ban size={18} />
+                차단된 사용자
+              </>
+            ) : sending ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
                 보내는 중...
