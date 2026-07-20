@@ -33,24 +33,51 @@ export function BottomTab({ className }: { className?: string }) {
 
       const { data: rooms } = await supabase
         .from('chat_rooms')
-        .select('id')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .eq('is_active', true);
+        .select('id, user1_id, user2_id')
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
       if (!rooms || rooms.length === 0) {
         setUnreadCount(0);
         return;
       }
 
-      const roomIds = rooms.map((r) => r.id);
-      const { count } = await supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .in('room_id', roomIds)
-        .neq('sender_id', user.id)
-        .is('read_at', null);
+      const partnerIds = rooms.map((r) =>
+        r.user1_id === user.id ? r.user2_id : r.user1_id,
+      );
 
-      if (mounted) setUnreadCount(count || 0);
+      const res = await fetch('/api/chat-partner', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerIds }),
+      });
+      const partnerData = await res.json();
+      const partners = partnerData?.partners || {};
+
+      const blockedPartnerIds = new Set<string>();
+      Object.entries(partners).forEach(([id, info]) => {
+        const p = info as { isBlocked?: boolean };
+        if (p?.isBlocked) blockedPartnerIds.add(id);
+      });
+
+      const unblockedRoomIds = rooms
+        .filter((r) => {
+          const pid =
+            r.user1_id === user.id ? r.user2_id : r.user1_id;
+          return !blockedPartnerIds.has(pid);
+        })
+        .map((r) => r.id);
+
+      if (unblockedRoomIds.length === 0) {
+        if (mounted) setUnreadCount(0);
+      } else {
+        const { count } = await supabase
+          .from('messages')
+          .select('id', { count: 'exact', head: true })
+          .in('room_id', unblockedRoomIds)
+          .neq('sender_id', user.id)
+          .is('read_at', null);
+        if (mounted) setUnreadCount(count || 0);
+      }
 
       channel = supabase
         .channel(`bottom-tab-messages-${Date.now()}`)
@@ -62,9 +89,21 @@ export function BottomTab({ className }: { className?: string }) {
             table: 'messages',
           },
           (payload) => {
-            const msg = payload.new as { sender_id: string };
+            const msg = payload.new as {
+              sender_id: string;
+              room_id: string;
+            };
             if (msg.sender_id !== user.id) {
-              incrementUnread();
+              const room = rooms.find((r) => r.id === msg.room_id);
+              if (room) {
+                const pid =
+                  room.user1_id === user.id
+                    ? room.user2_id
+                    : room.user1_id;
+                if (!blockedPartnerIds.has(pid)) {
+                  incrementUnread();
+                }
+              }
             }
           },
         )

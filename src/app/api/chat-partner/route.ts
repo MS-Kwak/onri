@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
   const { data: blocks } = await admin
     .from('blocks')
-    .select('blocker_id, blocked_id')
+    .select('blocker_id, blocked_id, created_at')
     .or(
       partnerIds
         .map(
@@ -58,9 +58,10 @@ export async function POST(request: NextRequest) {
         .join(','),
     );
 
-  const iBlockedSet = new Set<string>();
+  const iBlockedMap = new Map<string, string>();
   blocks?.forEach((b) => {
-    if (b.blocker_id === user.id) iBlockedSet.add(b.blocked_id);
+    if (b.blocker_id === user.id)
+      iBlockedMap.set(b.blocked_id, b.created_at);
   });
 
   const result: Record<
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
       verification_status: string;
       thumbnailUrl: string | null;
       isBlocked: boolean;
+      blockedAt: string | null;
     }
   > = {};
 
@@ -83,7 +85,8 @@ export async function POST(request: NextRequest) {
       age: ageVisible ? p.age || 0 : 0,
       verification_status: p.verification_status || 'none',
       thumbnailUrl: photoMap.get(p.id) || null,
-      isBlocked: iBlockedSet.has(p.id),
+      isBlocked: iBlockedMap.has(p.id),
+      blockedAt: iBlockedMap.get(p.id) || null,
     };
   });
 

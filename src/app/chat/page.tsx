@@ -86,20 +86,32 @@ export default function ChatListPage() {
         verification_status: string;
         thumbnailUrl: string | null;
         isBlocked: boolean;
+        blockedAt: string | null;
       }
     > = partnerData?.partners || {};
 
     const roomIds = chatRooms.map((r) => r.id);
 
-    const lastMessagesPromises = roomIds.map((roomId) =>
-      supabase
+    const lastMessagesPromises = roomIds.map((roomId, idx) => {
+      const partnerId =
+        chatRooms[idx].user1_id === user.id
+          ? chatRooms[idx].user2_id
+          : chatRooms[idx].user1_id;
+      const pInfo = partnersMap[partnerId];
+      const q = supabase
         .from('messages')
         .select('*')
-        .eq('room_id', roomId)
+        .eq('room_id', roomId);
+      if (pInfo?.blockedAt) {
+        q.or(
+          `sender_id.eq.${user.id},created_at.lte.${pInfo.blockedAt}`,
+        );
+      }
+      return q
         .order('created_at', { ascending: false })
         .limit(1)
-        .single(),
-    );
+        .single();
+    });
     const lastMessagesResults = await Promise.all(
       lastMessagesPromises,
     );
@@ -135,7 +147,9 @@ export default function ChatListPage() {
           },
           isBlocked: blocked,
           lastMessage: lastMessagesResults[i]?.data || null,
-          unreadCount: blocked ? 0 : (unreadCountsResults[i]?.count || 0),
+          unreadCount: blocked
+            ? 0
+            : unreadCountsResults[i]?.count || 0,
         };
       },
     );
@@ -184,6 +198,7 @@ export default function ChatListPage() {
           setRooms((prev) =>
             prev.map((room) => {
               if (room.id !== newMsg.room_id) return room;
+              if (room.isBlocked) return room;
               return {
                 ...room,
                 lastMessage: newMsg,
@@ -331,7 +346,10 @@ export default function ChatListPage() {
                   />
                   {room.isBlocked ? (
                     <div className="absolute -right-0.5 -bottom-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-background">
-                      <Ban size={11} className="text-foreground-dim" />
+                      <Ban
+                        size={11}
+                        className="text-foreground-dim"
+                      />
                     </div>
                   ) : room.partner.verification_status ===
                     'approved' ? (

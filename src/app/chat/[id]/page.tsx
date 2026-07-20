@@ -138,6 +138,7 @@ export default function ChatRoomPage({
   const [searchIndex, setSearchIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isRoomActive, setIsRoomActive] = useState(true);
+  const blockedAtRef = useRef<string | null>(null);
 
   const searchResults = useMemo(
     () =>
@@ -227,7 +228,9 @@ export default function ChatRoomPage({
       if (!mounted) return;
 
       const roomActive = !partnerInfo?.isBlocked;
+      const blockTime = partnerInfo?.blockedAt || null;
       setIsRoomActive(roomActive);
+      blockedAtRef.current = blockTime;
 
       setPartner({
         id: partnerId,
@@ -244,7 +247,14 @@ export default function ChatRoomPage({
         .eq('room_id', roomId)
         .order('created_at', { ascending: true });
 
-      const fetchedMessages = msgs || [];
+      let fetchedMessages = msgs || [];
+      if (blockTime) {
+        fetchedMessages = fetchedMessages.filter(
+          (m) =>
+            m.sender_id === user.id ||
+            new Date(m.created_at) <= new Date(blockTime),
+        );
+      }
       if (!mounted) return;
       setMessages(fetchedMessages);
       setLoading(false);
@@ -287,6 +297,14 @@ export default function ChatRoomPage({
         },
         (payload) => {
           const newMsg = payload.new as Message;
+          if (
+            blockedAtRef.current &&
+            newMsg.sender_id !== currentUserId &&
+            new Date(newMsg.created_at) >
+              new Date(blockedAtRef.current)
+          ) {
+            return;
+          }
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
