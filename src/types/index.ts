@@ -85,6 +85,7 @@ export type Message = {
   room_id: string;
   sender_id: string;
   text: string;
+  image_url: string | null;
   read_at: string | null;
   created_at: string;
 };

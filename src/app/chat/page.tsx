@@ -386,7 +386,9 @@ export default function ChatListPage() {
                     ) : (
                       <p className="truncate pr-2 text-[13px] text-foreground/45">
                         {room.lastMessage
-                          ? room.lastMessage.text
+                          ? room.lastMessage.image_url
+                            ? '📷 사진'
+                            : room.lastMessage.text
                           : '대화를 시작해보세요'}
                       </p>
                     )}

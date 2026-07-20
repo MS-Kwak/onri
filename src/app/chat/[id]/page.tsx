@@ -29,7 +29,9 @@ import {
   ChevronUp,
   ChevronDown,
   Loader2,
+  ImagePlus,
 } from 'lucide-react';
+import Image from 'next/image';
 import * as Dialog from '@radix-ui/react-dialog';
 import { toast } from 'sonner';
 import { Avatar } from '@/components/ui/avatar';
@@ -139,6 +141,12 @@ export default function ChatRoomPage({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isRoomActive, setIsRoomActive] = useState(true);
   const blockedAtRef = useRef<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(
+    null,
+  );
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const searchResults = useMemo(
     () =>
@@ -146,7 +154,7 @@ export default function ChatRoomPage({
         ? messages
             .map((m, i) => ({ msg: m, idx: i }))
             .filter(({ msg }) =>
-              msg.text
+              (msg.text || '')
                 .toLowerCase()
                 .includes(searchQuery.trim().toLowerCase()),
             )
@@ -344,6 +352,68 @@ export default function ChatRoomPage({
     markAsRead,
     decrementUnread,
   ]);
+
+  const handleImageSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('10MB 이하의 이미지만 보낼 수 있어요');
+      return;
+    }
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 보낼 수 있어요');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+
+  const handleSendImage = async () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (!file || !currentUserId || !isRoomActive || uploadingImage)
+      return;
+
+    setUploadingImage(true);
+    const supabase = createClient();
+
+    try {
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = `chat/${roomId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(path, file, { contentType: file.type });
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('chat-images').getPublicUrl(path);
+
+      const { error: insertError } = await supabase
+        .from('messages')
+        .insert({
+          room_id: roomId,
+          sender_id: currentUserId,
+          text: '',
+          image_url: publicUrl,
+        });
+
+      if (insertError) throw insertError;
+    } catch {
+      toast.error('이미지 전송에 실패했어요');
+    } finally {
+      setUploadingImage(false);
+      setImagePreview(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const handleSend = async () => {
     const trimmed = inputText.trim();
@@ -644,15 +714,44 @@ export default function ChatRoomPage({
                   <div
                     className={`flex max-w-[70%] items-end gap-1.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
                   >
-                    <div
-                      className={`rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed transition-all ${
-                        isMine
-                          ? 'rounded-br-md bg-gold text-ink'
-                          : 'rounded-bl-md bg-surface text-foreground'
-                      } ${searchResults.some((r) => r.idx === idx) ? 'ring-2 ring-gold/60' : ''} ${searchResults[searchIndex]?.idx === idx ? 'ring-2 ring-gold scale-[1.02]' : ''}`}
-                    >
-                      {msg.text}
-                    </div>
+                    {msg.image_url ? (
+                      <button
+                        onClick={() => setLightboxUrl(msg.image_url)}
+                        className={`overflow-hidden rounded-2xl transition-all ${
+                          isMine ? 'rounded-br-md' : 'rounded-bl-md'
+                        } ${searchResults.some((r) => r.idx === idx) ? 'ring-2 ring-gold/60' : ''} ${searchResults[searchIndex]?.idx === idx ? 'ring-2 ring-gold scale-[1.02]' : ''}`}
+                      >
+                        <Image
+                          src={msg.image_url}
+                          alt="공유된 이미지"
+                          width={240}
+                          height={240}
+                          className="max-h-60 w-auto max-w-[240px] object-cover"
+                          unoptimized
+                        />
+                        {msg.text && (
+                          <div
+                            className={`px-3.5 py-2 text-[13.5px] leading-relaxed ${
+                              isMine
+                                ? 'bg-gold text-ink'
+                                : 'bg-surface text-foreground'
+                            }`}
+                          >
+                            {msg.text}
+                          </div>
+                        )}
+                      </button>
+                    ) : (
+                      <div
+                        className={`rounded-2xl px-3.5 py-2.5 text-[13.5px] leading-relaxed transition-all ${
+                          isMine
+                            ? 'rounded-br-md bg-gold text-ink'
+                            : 'rounded-bl-md bg-surface text-foreground'
+                        } ${searchResults.some((r) => r.idx === idx) ? 'ring-2 ring-gold/60' : ''} ${searchResults[searchIndex]?.idx === idx ? 'ring-2 ring-gold scale-[1.02]' : ''}`}
+                      >
+                        {msg.text}
+                      </div>
+                    )}
 
                     {isLastInGroup && (
                       <div
@@ -697,7 +796,43 @@ export default function ChatRoomPage({
         </div>
       ) : (
         <div className="border-t border-line bg-background px-4 pt-3 pb-8">
+          {imagePreview && (
+            <div className="relative mb-3 inline-block">
+              <Image
+                src={imagePreview}
+                alt="미리보기"
+                width={120}
+                height={120}
+                className="h-24 w-24 rounded-xl object-cover"
+                unoptimized
+              />
+              <button
+                onClick={() => {
+                  setImagePreview(null);
+                  if (fileInputRef.current)
+                    fileInputRef.current.value = '';
+                }}
+                className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background shadow"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          )}
           <div className="flex items-end gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground/60 disabled:opacity-30"
+            >
+              <ImagePlus size={20} />
+            </button>
             <div className="flex-1 rounded-2xl bg-surface">
               <textarea
                 ref={inputRef}
@@ -710,7 +845,11 @@ export default function ChatRoomPage({
                     !e.nativeEvent.isComposing
                   ) {
                     e.preventDefault();
-                    handleSend();
+                    if (imagePreview) {
+                      handleSendImage();
+                    } else {
+                      handleSend();
+                    }
                   }
                 }}
                 placeholder="메시지를 입력하세요..."
@@ -719,11 +858,19 @@ export default function ChatRoomPage({
               />
             </div>
             <button
-              onClick={handleSend}
-              disabled={!inputText.trim() || sending}
+              onClick={imagePreview ? handleSendImage : handleSend}
+              disabled={
+                imagePreview
+                  ? uploadingImage
+                  : !inputText.trim() || sending
+              }
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
             >
-              <Send size={18} />
+              {uploadingImage ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <Send size={18} />
+              )}
             </button>
           </div>
         </div>
@@ -785,6 +932,29 @@ export default function ChatRoomPage({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/90"
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-12 right-4 z-10 rounded-full bg-white/10 p-2 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+          >
+            <X size={22} />
+          </button>
+          <Image
+            src={lightboxUrl}
+            alt="이미지 미리보기"
+            width={800}
+            height={800}
+            className="max-h-[85vh] max-w-[90vw] rounded-lg object-contain"
+            unoptimized
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
