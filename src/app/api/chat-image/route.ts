@@ -37,6 +37,27 @@ export async function POST(request: NextRequest) {
   );
 
   try {
+    const { data: buckets } = await admin.storage.listBuckets();
+    const bucketExists = buckets?.some(
+      (b) => b.name === 'chat-images',
+    );
+    if (!bucketExists) {
+      const { error: createError } = await admin.storage.createBucket(
+        'chat-images',
+        { public: true },
+      );
+      if (createError) {
+        console.error(
+          '[chat-image] bucket create error:',
+          createError,
+        );
+        return NextResponse.json(
+          { error: `버킷 생성 실패: ${createError.message}` },
+          { status: 500 },
+        );
+      }
+    }
+
     const ext = file.name.split('.').pop() || 'jpg';
     const path = `chat/${roomId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -51,7 +72,7 @@ export async function POST(request: NextRequest) {
     if (uploadError) {
       console.error('[chat-image] upload error:', uploadError);
       return NextResponse.json(
-        { error: uploadError.message },
+        { error: `업로드 실패: ${uploadError.message}` },
         { status: 500 },
       );
     }
