@@ -8,7 +8,7 @@ import {
   Flag,
   Users,
   LogOut,
-  ChevronLeft,
+  Bell,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: '/admin/reports', label: '신고 관리', icon: Flag },
   { href: '/admin/users', label: '유저 관리', icon: Users },
   { href: '/admin/withdrawals', label: '탈퇴 기록', icon: LogOut },
+  { href: '/admin/push', label: '푸시 알림', icon: Bell },
 ];
 
 export default function AdminLayout({
@@ -38,13 +39,7 @@ export default function AdminLayout({
   return (
     <div className="flex min-h-dvh bg-background">
       <aside className="sticky top-0 flex h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface">
-        <div className="flex items-center gap-2 px-5 pt-6 pb-4">
-          <Link
-            href="/home"
-            className="rounded-lg p-1 text-foreground/40 transition-colors hover:text-foreground"
-          >
-            <ChevronLeft size={18} />
-          </Link>
+        <div className="px-5 pt-6 pb-4">
           <h1 className="text-base font-bold text-gold">
             온리 관리자
           </h1>

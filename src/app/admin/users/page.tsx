@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Users,
   Search,
@@ -53,6 +54,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function UsersPage() {
+  const router = useRouter();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -85,7 +87,9 @@ export default function UsersPage() {
       if (cancelled) return;
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [fetchUsers]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -309,13 +313,10 @@ export default function UsersPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() =>
-                              window.open(
-                                `/profile/${u.id}`,
-                                '_blank',
-                              )
+                              router.push(`/admin/users/${u.id}`)
                             }
                             className="rounded-lg p-1.5 text-foreground/30 transition-colors hover:bg-foreground/5 hover:text-foreground"
-                            title="프로필 보기"
+                            title="상세 보기"
                           >
                             <Eye size={14} />
                           </button>
