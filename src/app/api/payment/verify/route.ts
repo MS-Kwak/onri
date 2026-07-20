@@ -92,23 +92,57 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { error: rpcError } = await supabase.rpc(
-      'purchase_hearts',
-      {
-        p_amount: pkg.amount,
-        p_payment_ref: paymentId,
-      },
+    const { createClient } = await import('@supabase/supabase-js');
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
-    if (rpcError) {
-      console.error('[Payment] 하트 지급 실패:', rpcError);
+    const { data: currentHeart } = await admin
+      .from('hearts')
+      .select('balance')
+      .eq('user_id', user.id)
+      .single();
+
+    console.log(
+      '[Payment] 지급 시작:',
+      paymentId,
+      `유저: ${user.id.slice(0, 8)}`,
+      `현재 잔액: ${currentHeart?.balance}`,
+      `지급량: ${pkg.amount}`,
+    );
+
+    const { error: updateError } = await admin
+      .from('hearts')
+      .update({ balance: (currentHeart?.balance || 0) + pkg.amount })
+      .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error(
+        '[Payment] 하트 잔액 업데이트 실패:',
+        updateError,
+      );
       return NextResponse.json(
         { error: '하트 지급에 실패했습니다' },
         { status: 500 },
       );
     }
 
-    const { data: heartData } = await supabase
+    const { error: txError } = await admin
+      .from('heart_transactions')
+      .insert({
+        user_id: user.id,
+        amount: pkg.amount,
+        type: 'purchase',
+        description: `하트 충전 (${pkg.amount}개)`,
+        reference_id: paymentId,
+      });
+
+    if (txError) {
+      console.error('[Payment] 거래 내역 기록 실패:', txError);
+    }
+
+    const { data: heartData } = await admin
       .from('hearts')
       .select('balance')
       .eq('user_id', user.id)

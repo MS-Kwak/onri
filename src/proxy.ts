@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import crypto from 'crypto';
 
 const PUBLIC_PATHS = [
   '/',
@@ -15,6 +16,21 @@ const PUBLIC_PATHS = [
   '/refund',
 ];
 
+function isValidAdminSession(request: NextRequest): boolean {
+  const token = request.cookies.get('admin_token')?.value;
+  const hmac = request.cookies.get('admin_hmac')?.value;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!token || !hmac || !adminPassword) return false;
+
+  const expectedHmac = crypto
+    .createHmac('sha256', adminPassword)
+    .update(token)
+    .digest('hex');
+
+  return hmac === expectedHmac;
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -23,6 +39,33 @@ export async function proxy(request: NextRequest) {
   );
 
   if (isPublic) {
+    return NextResponse.next();
+  }
+
+  if (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/api/admin')
+  ) {
+    if (
+      pathname === '/admin/login' ||
+      pathname === '/api/admin/login' ||
+      pathname === '/api/admin/logout'
+    ) {
+      return NextResponse.next();
+    }
+
+    if (!isValidAdminSession(request)) {
+      if (pathname.startsWith('/api/admin')) {
+        return NextResponse.json(
+          { error: '관리자 인증 필요' },
+          { status: 403 },
+        );
+      }
+      const url = request.nextUrl.clone();
+      url.pathname = '/admin/login';
+      return NextResponse.redirect(url);
+    }
+
     return NextResponse.next();
   }
 
