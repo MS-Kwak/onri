@@ -380,32 +380,21 @@ export default function ChatRoomPage({
       return;
 
     setUploadingImage(true);
-    const supabase = createClient();
 
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = `chat/${roomId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('roomId', roomId);
 
-      const { error: uploadError } = await supabase.storage
-        .from('chat-images')
-        .upload(path, file, { contentType: file.type });
+      const res = await fetch('/api/chat-image', {
+        method: 'POST',
+        body: formData,
+      });
 
-      if (uploadError) throw uploadError;
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('chat-images').getPublicUrl(path);
-
-      const { error: insertError } = await supabase
-        .from('messages')
-        .insert({
-          room_id: roomId,
-          sender_id: currentUserId,
-          text: '',
-          image_url: publicUrl,
-        });
-
-      if (insertError) throw insertError;
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || '업로드 실패');
+      }
     } catch {
       toast.error('이미지 전송에 실패했어요');
     } finally {
