@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { toast } from 'sonner';
 
 type Step =
   | 'intro'
@@ -29,6 +30,7 @@ type Step =
 export default function SelfieVerifyPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const selfieFileRef = useRef<File | null>(null);
 
   const [step, setStep] = useState<Step>('intro');
   const [selfieUrl, setSelfieUrl] = useState('');
@@ -36,6 +38,7 @@ export default function SelfieVerifyPage() {
   const handleCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    selfieFileRef.current = file;
     const url = URL.createObjectURL(file);
     setSelfieUrl(url);
     setStep('confirm');
@@ -44,14 +47,41 @@ export default function SelfieVerifyPage() {
 
   const handleRetake = () => {
     setSelfieUrl('');
+    selfieFileRef.current = null;
     setStep('capture');
     setTimeout(() => fileInputRef.current?.click(), 100);
   };
 
   const handleSubmit = async () => {
+    if (!selfieFileRef.current) {
+      toast.error('셀카를 촬영해주세요');
+      return;
+    }
+
     setStep('processing');
-    await new Promise((r) => setTimeout(r, 1500));
-    setStep('submitted');
+
+    try {
+      const formData = new FormData();
+      formData.append('selfie', selfieFileRef.current);
+
+      const res = await fetch('/api/selfie-verify', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data.error || '인증 요청에 실패했습니다');
+        setStep('confirm');
+        return;
+      }
+
+      setStep('submitted');
+    } catch {
+      toast.error('인증 요청 중 오류가 발생했습니다');
+      setStep('confirm');
+    }
   };
 
   return (

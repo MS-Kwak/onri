@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  Suspense,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -11,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
+import { useInView } from 'react-intersection-observer';
 import { Avatar } from '@/components/ui/avatar';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useTheme } from '@/components/theme-provider';
@@ -25,6 +32,8 @@ import {
 } from '@/lib/constants';
 import { useHeartStore } from '@/store';
 import type { Identity, RelationGoal, Profile } from '@/types';
+
+const PAGE_SIZE = 20;
 
 const REGIONS = [
   '전체',
@@ -73,15 +82,92 @@ function HomePage() {
     thumbnailUrl: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const { ref: loadMoreRef, inView } = useInView({ threshold: 0.1 });
+
+  const mapProfiles = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (rawProfiles: any[], photoMap: Map<string, string>): Profile[] =>
+      rawProfiles.map((p) => ({
+        id: p.id,
+        nickname: p.nickname,
+        age: p.age,
+        region: p.region,
+        thumbnailUrl: photoMap.get(p.id) || '',
+        isVerified: p.verification_status === 'approved',
+        verificationStatus: p.verification_status,
+        identity: p.identity as Identity,
+        identityOther: p.identity_other || '',
+        lookingFor: (p.looking_for || []) as RelationGoal[],
+        bio: p.bio || '',
+        height: p.height,
+        weight: p.weight,
+        interests: p.interests || [],
+        activeTime: p.active_time || [],
+        visibility: {
+          region: p.visibility_region,
+          age: p.visibility_age,
+        },
+        createdAt: p.created_at,
+      })),
+    [],
+  );
+
+  const fetchPage = useCallback(
+    async (pageNum: number, uid: string) => {
+      const supabase = createClient();
+      const from = pageNum * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+
+      const { data: pageProfiles } = await supabase
+        .from('profiles')
+        .select('*')
+        .neq('id', uid)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (!pageProfiles || pageProfiles.length === 0) {
+        setHasMore(false);
+        return [];
+      }
+
+      if (pageProfiles.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+
+      const userIds = pageProfiles.map((p) => p.id);
+      const { data: photos } = await supabase
+        .from('profile_photos')
+        .select('user_id, storage_path, display_order')
+        .in('user_id', userIds)
+        .order('display_order');
+
+      const photoMap = new Map<string, string>();
+      photos?.forEach((photo) => {
+        if (!photoMap.has(photo.user_id)) {
+          photoMap.set(photo.user_id, photo.storage_path);
+        }
+      });
+
+      return mapProfiles(pageProfiles, photoMap);
+    },
+    [mapProfiles],
+  );
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchInitial = async () => {
       const supabase = createClient();
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) return;
+      setUserId(user.id);
 
       const { data: myProfile } = await supabase
         .from('profiles')
@@ -108,53 +194,9 @@ function HomePage() {
         .single();
       if (heartData) setBalance(heartData.balance);
 
-      const { data: allProfiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
-
-      if (allProfiles && allProfiles.length > 0) {
-        const userIds = allProfiles.map((p) => p.id);
-        const { data: allPhotos } = await supabase
-          .from('profile_photos')
-          .select('user_id, storage_path, display_order')
-          .in('user_id', userIds)
-          .order('display_order');
-
-        const photoMap = new Map<string, string>();
-        allPhotos?.forEach((photo) => {
-          if (!photoMap.has(photo.user_id)) {
-            photoMap.set(photo.user_id, photo.storage_path);
-          }
-        });
-
-        const mapped: Profile[] = allProfiles.map((p) => ({
-          id: p.id,
-          nickname: p.nickname,
-          age: p.age,
-          region: p.region,
-          thumbnailUrl: photoMap.get(p.id) || '',
-          isVerified: p.verification_status === 'approved',
-          verificationStatus: p.verification_status,
-          identity: p.identity as Identity,
-          identityOther: p.identity_other || '',
-          lookingFor: (p.looking_for || []) as RelationGoal[],
-          bio: p.bio || '',
-          height: p.height,
-          weight: p.weight,
-          interests: p.interests || [],
-          activeTime: p.active_time || [],
-          visibility: {
-            region: p.visibility_region,
-            age: p.visibility_age,
-          },
-          createdAt: p.created_at,
-        }));
-
-        setProfiles(mapped);
-      }
+      const firstPage = await fetchPage(0, user.id);
+      setProfiles(firstPage);
+      setPage(1);
 
       const { data: matchedSignals } = await supabase
         .from('signals')
@@ -171,8 +213,24 @@ function HomePage() {
       setLoading(false);
     };
 
-    fetchData();
-  }, [setBalance]);
+    fetchInitial();
+  }, [setBalance, fetchPage]);
+
+  useEffect(() => {
+    if (!inView || !hasMore || loadingMore || !userId) return;
+
+    const loadMore = async () => {
+      setLoadingMore(true);
+      const newProfiles = await fetchPage(page, userId);
+      if (newProfiles.length > 0) {
+        setProfiles((prev) => [...prev, ...newProfiles]);
+        setPage((p) => p + 1);
+      }
+      setLoadingMore(false);
+    };
+
+    loadMore();
+  }, [inView, hasMore, loadingMore, userId, page, fetchPage]);
 
   const [showFilter, setShowFilter] = useState(false);
   const [filterIdentities, setFilterIdentities] = useState<
@@ -518,17 +576,39 @@ function HomePage() {
       {/* 프로필 카드 그리드 */}
       <div className="flex-1 px-4 pt-4">
         {filteredProfiles.length > 0 ? (
-          <div className="grid grid-cols-2 gap-3">
-            {filteredProfiles.map((profile) => (
-              <ProfileCard
-                key={profile.id}
-                profile={profile}
-                onHeart={handleHeart}
-                onPress={(id) => router.push(`/profile/${id}`)}
-                isMatched={matchedIds.has(profile.id)}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              {filteredProfiles.map((profile) => (
+                <ProfileCard
+                  key={profile.id}
+                  profile={profile}
+                  onHeart={handleHeart}
+                  onPress={(id) => router.push(`/profile/${id}`)}
+                  isMatched={matchedIds.has(profile.id)}
+                />
+              ))}
+            </div>
+
+            {hasMore && (
+              <div
+                ref={loadMoreRef}
+                className="flex items-center justify-center py-8"
+              >
+                {loadingMore && (
+                  <Loader2
+                    size={20}
+                    className="animate-spin text-gold/40"
+                  />
+                )}
+              </div>
+            )}
+
+            {!hasMore && profiles.length > PAGE_SIZE && (
+              <p className="py-6 text-center text-xs text-foreground/20">
+                모든 프로필을 불러왔어요
+              </p>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-4 pt-24">
             <Search size={40} className="text-foreground-dim" />
