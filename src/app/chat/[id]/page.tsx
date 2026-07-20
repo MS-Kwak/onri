@@ -807,7 +807,7 @@ export default function ChatRoomPage({
               </button>
             </div>
           )}
-          <div className="flex items-end gap-2">
+          <div className="flex items-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -818,11 +818,11 @@ export default function ChatRoomPage({
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingImage}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground/60 disabled:opacity-30"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-foreground/40 transition-colors hover:bg-foreground/5 hover:text-foreground/60 disabled:opacity-30"
             >
               <ImagePlus size={20} />
             </button>
-            <div className="flex-1 rounded-2xl bg-surface">
+            <div className="flex min-h-10 flex-1 items-center rounded-2xl bg-surface">
               <textarea
                 ref={inputRef}
                 value={inputText}
@@ -843,7 +843,7 @@ export default function ChatRoomPage({
                 }}
                 placeholder="메시지를 입력하세요..."
                 rows={1}
-                className="max-h-24 w-full resize-none bg-transparent px-4 py-3 text-sm text-foreground placeholder:text-foreground-soft focus:outline-none"
+                className="max-h-24 w-full resize-none bg-transparent px-4 py-2.5 text-sm leading-5 text-foreground placeholder:text-foreground-soft focus:outline-none"
               />
             </div>
             <button
@@ -853,7 +853,7 @@ export default function ChatRoomPage({
                   ? uploadingImage
                   : !inputText.trim() || sending
               }
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gold text-ink transition-all hover:bg-gold/90 active:scale-95 disabled:opacity-30"
             >
               {uploadingImage ? (
                 <Loader2 size={18} className="animate-spin" />
