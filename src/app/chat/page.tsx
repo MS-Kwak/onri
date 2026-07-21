@@ -81,12 +81,40 @@ export default function ChatListPage() {
       r.user1_id === user.id ? r.user2_id : r.user1_id,
     );
 
-    const partnerRes = await fetch('/api/chat-partner', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ partnerIds }),
-    });
-    const partnerData = await partnerRes.json();
+    const roomIds = chatRooms.map((r) => r.id);
+
+    const [partnerData, lastMessagesResults, unreadCountsResults] =
+      await Promise.all([
+        fetch('/api/chat-partner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ partnerIds }),
+        }).then((r) => r.json()),
+
+        Promise.all(
+          roomIds.map((roomId) =>
+            supabase
+              .from('messages')
+              .select('*')
+              .eq('room_id', roomId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single(),
+          ),
+        ),
+
+        Promise.all(
+          roomIds.map((roomId) =>
+            supabase
+              .from('messages')
+              .select('id', { count: 'exact', head: true })
+              .eq('room_id', roomId)
+              .neq('sender_id', user.id)
+              .is('read_at', null),
+          ),
+        ),
+      ]);
+
     const partnersMap: Record<
       string,
       {
@@ -98,44 +126,6 @@ export default function ChatListPage() {
         blockedAt: string | null;
       }
     > = partnerData?.partners || {};
-
-    const roomIds = chatRooms.map((r) => r.id);
-
-    const lastMessagesPromises = roomIds.map((roomId, idx) => {
-      const partnerId =
-        chatRooms[idx].user1_id === user.id
-          ? chatRooms[idx].user2_id
-          : chatRooms[idx].user1_id;
-      const pInfo = partnersMap[partnerId];
-      const q = supabase
-        .from('messages')
-        .select('*')
-        .eq('room_id', roomId);
-      if (pInfo?.blockedAt) {
-        q.or(
-          `sender_id.eq.${user.id},created_at.lte.${pInfo.blockedAt}`,
-        );
-      }
-      return q
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-    });
-    const lastMessagesResults = await Promise.all(
-      lastMessagesPromises,
-    );
-
-    const unreadCountsPromises = roomIds.map((roomId) =>
-      supabase
-        .from('messages')
-        .select('id', { count: 'exact', head: true })
-        .eq('room_id', roomId)
-        .neq('sender_id', user.id)
-        .is('read_at', null),
-    );
-    const unreadCountsResults = await Promise.all(
-      unreadCountsPromises,
-    );
 
     const enrichedRooms: ChatRoomWithPartner[] = chatRooms.map(
       (room, i) => {

@@ -229,12 +229,19 @@ export default function ChatRoomPage({
       const partnerId =
         room.user1_id === user.id ? room.user2_id : room.user1_id;
 
-      const partnerRes = await fetch('/api/chat-partner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerIds: [partnerId] }),
-      });
-      const partnerData = await partnerRes.json();
+      const [partnerData, msgsRes] = await Promise.all([
+        fetch('/api/chat-partner', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ partnerIds: [partnerId] }),
+        }).then((r) => r.json()),
+        supabase
+          .from('messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .order('created_at', { ascending: true }),
+      ]);
+
       const partnerInfo = partnerData?.partners?.[partnerId];
 
       if (!mounted) return;
@@ -253,13 +260,7 @@ export default function ChatRoomPage({
         thumbnailUrl: partnerInfo?.thumbnailUrl || null,
       });
 
-      const { data: msgs } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('room_id', roomId)
-        .order('created_at', { ascending: true });
-
-      let fetchedMessages = msgs || [];
+      let fetchedMessages = msgsRes.data || [];
       if (blockTime) {
         fetchedMessages = fetchedMessages.filter(
           (m) =>
@@ -278,11 +279,13 @@ export default function ChatRoomPage({
         .map((m) => m.id);
 
       if (unreadIds.length > 0) {
-        await supabase
+        supabase
           .from('messages')
           .update({ read_at: new Date().toISOString() })
-          .in('id', unreadIds);
-        if (mounted) decrementUnread(unreadIds.length);
+          .in('id', unreadIds)
+          .then(() => {
+            if (mounted) decrementUnread(unreadIds.length);
+          });
       }
     };
 

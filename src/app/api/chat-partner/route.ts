@@ -29,34 +29,40 @@ export async function POST(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
-  const { data: profiles } = await admin
-    .from('profiles')
-    .select('id, nickname, age, verification_status, visibility_age')
-    .in('id', partnerIds);
+  const [profilesRes, photosRes, blocksRes] = await Promise.all([
+    admin
+      .from('profiles')
+      .select(
+        'id, nickname, age, verification_status, visibility_age',
+      )
+      .in('id', partnerIds),
+    admin
+      .from('profile_photos')
+      .select('user_id, storage_path')
+      .in('user_id', partnerIds)
+      .order('display_order'),
+    admin
+      .from('blocks')
+      .select('blocker_id, blocked_id, created_at')
+      .or(
+        partnerIds
+          .map(
+            (pid: string) =>
+              `and(blocker_id.eq.${user.id},blocked_id.eq.${pid}),and(blocker_id.eq.${pid},blocked_id.eq.${user.id})`,
+          )
+          .join(','),
+      ),
+  ]);
 
-  const { data: photos } = await admin
-    .from('profile_photos')
-    .select('user_id, storage_path')
-    .in('user_id', partnerIds)
-    .order('display_order');
+  const profiles = profilesRes.data;
+  const photos = photosRes.data;
+  const blocks = blocksRes.data;
 
   const photoMap = new Map<string, string>();
   photos?.forEach((p) => {
     if (!photoMap.has(p.user_id))
       photoMap.set(p.user_id, p.storage_path);
   });
-
-  const { data: blocks } = await admin
-    .from('blocks')
-    .select('blocker_id, blocked_id, created_at')
-    .or(
-      partnerIds
-        .map(
-          (pid: string) =>
-            `and(blocker_id.eq.${user.id},blocked_id.eq.${pid}),and(blocker_id.eq.${pid},blocked_id.eq.${user.id})`,
-        )
-        .join(','),
-    );
 
   const iBlockedMap = new Map<string, string>();
   blocks?.forEach((b) => {
