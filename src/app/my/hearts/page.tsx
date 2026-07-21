@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  Suspense,
+} from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as PortOne from '@portone/browser-sdk/v2';
 import {
@@ -85,7 +91,7 @@ function HeartsPage() {
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [verifyingRedirect, setVerifyingRedirect] = useState(false);
+  const verifiedRef = useRef(false);
 
   const refreshData = useCallback(async () => {
     const supabase = createClient();
@@ -123,10 +129,10 @@ function HeartsPage() {
   useEffect(() => {
     const paymentId =
       searchParams.get('paymentId') || searchParams.get('payment_id');
-    if (!paymentId || verifyingRedirect) return;
+    if (!paymentId || verifiedRef.current) return;
+    verifiedRef.current = true;
 
     const verifyRedirectPayment = async () => {
-      setVerifyingRedirect(true);
       try {
         const verifyRes = await fetch('/api/payment/verify', {
           method: 'POST',
@@ -150,17 +156,10 @@ function HeartsPage() {
       }
 
       router.replace('/my/hearts', { scroll: false });
-      setVerifyingRedirect(false);
     };
 
     verifyRedirectPayment();
-  }, [
-    searchParams,
-    verifyingRedirect,
-    setBalance,
-    refreshData,
-    router,
-  ]);
+  }, [searchParams, setBalance, refreshData, router]);
 
   const handlePurchase = async () => {
     const pkg = HEART_PACKAGES.find((p) => p.id === selectedPkg);
