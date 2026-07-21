@@ -239,9 +239,9 @@ export default function ChatRoomPage({
 
       if (!mounted) return;
 
-      const roomActive = !partnerInfo?.isBlocked;
+      const iBlocked = partnerInfo?.isBlocked || false;
       const blockTime = partnerInfo?.blockedAt || null;
-      setIsRoomActive(roomActive);
+      setIsRoomActive(!iBlocked);
       blockedAtRef.current = blockTime;
 
       setPartner({
@@ -464,15 +464,10 @@ export default function ChatRoomPage({
       blocked_id: partner.id,
     });
 
-    await supabase
-      .from('chat_rooms')
-      .update({ is_active: false })
-      .eq('id', roomId);
-
-    setIsRoomActive(false);
+    blockedAtRef.current = new Date().toISOString();
     setMenuOpen(false);
     toast.success(`${partner.nickname}님을 차단했어요`, {
-      description: '더 이상 대화할 수 없어요',
+      description: '상대방에게는 알리지 않아요',
       icon: <Ban size={16} className="text-red-400" />,
     });
   };

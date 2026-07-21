@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Home, Heart, MessageCircleMore, User } from 'lucide-react';
@@ -20,103 +20,128 @@ export function BottomTab({ className }: { className?: string }) {
   const { unreadCount, setUnreadCount, incrementUnread } =
     useChatStore();
 
-  useEffect(() => {
-    let mounted = true;
+  const userIdRef = useRef<string | null>(null);
+  const roomsRef = useRef<
+    { id: string; user1_id: string; user2_id: string }[]
+  >([]);
+  const blockedRef = useRef<Set<string>>(new Set());
+
+  const fetchUnreadCount = useCallback(async () => {
     const supabase = createClient();
-    let channel: ReturnType<typeof supabase.channel> | null = null;
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    userIdRef.current = user.id;
 
-    const fetchUnread = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user || !mounted) return;
+    const { data: rooms } = await supabase
+      .from('chat_rooms')
+      .select('id, user1_id, user2_id')
+      .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
 
-      const { data: rooms } = await supabase
-        .from('chat_rooms')
-        .select('id, user1_id, user2_id')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`);
+    if (!rooms || rooms.length === 0) {
+      setUnreadCount(0);
+      roomsRef.current = [];
+      return;
+    }
+    roomsRef.current = rooms;
 
-      if (!rooms || rooms.length === 0) {
-        setUnreadCount(0);
-        return;
+    const partnerIds = rooms.map((r) =>
+      r.user1_id === user.id ? r.user2_id : r.user1_id,
+    );
+
+    const res = await fetch('/api/chat-partner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ partnerIds }),
+    });
+    const partnerData = await res.json();
+    const partners = partnerData?.partners || {};
+
+    const blocked = new Set<string>();
+    Object.entries(partners).forEach(([id, info]) => {
+      const p = info as { isBlocked?: boolean };
+      if (p?.isBlocked) blocked.add(id);
+    });
+    blockedRef.current = blocked;
+
+    const unblockedRoomIds = rooms
+      .filter((r) => {
+        const pid = r.user1_id === user.id ? r.user2_id : r.user1_id;
+        return !blocked.has(pid);
+      })
+      .map((r) => r.id);
+
+    if (unblockedRoomIds.length === 0) {
+      setUnreadCount(0);
+    } else {
+      const { count } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true })
+        .in('room_id', unblockedRoomIds)
+        .neq('sender_id', user.id)
+        .is('read_at', null);
+      setUnreadCount(count || 0);
+    }
+  }, [setUnreadCount]);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUnreadCount();
       }
-
-      const partnerIds = rooms.map((r) =>
-        r.user1_id === user.id ? r.user2_id : r.user1_id,
-      );
-
-      const res = await fetch('/api/chat-partner', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ partnerIds }),
-      });
-      const partnerData = await res.json();
-      const partners = partnerData?.partners || {};
-
-      const blockedPartnerIds = new Set<string>();
-      Object.entries(partners).forEach(([id, info]) => {
-        const p = info as { isBlocked?: boolean };
-        if (p?.isBlocked) blockedPartnerIds.add(id);
-      });
-
-      const unblockedRoomIds = rooms
-        .filter((r) => {
-          const pid =
-            r.user1_id === user.id ? r.user2_id : r.user1_id;
-          return !blockedPartnerIds.has(pid);
-        })
-        .map((r) => r.id);
-
-      if (unblockedRoomIds.length === 0) {
-        if (mounted) setUnreadCount(0);
-      } else {
-        const { count } = await supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .in('room_id', unblockedRoomIds)
-          .neq('sender_id', user.id)
-          .is('read_at', null);
-        if (mounted) setUnreadCount(count || 0);
-      }
-
-      channel = supabase
-        .channel(`bottom-tab-messages-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-          },
-          (payload) => {
-            const msg = payload.new as {
-              sender_id: string;
-              room_id: string;
-            };
-            if (msg.sender_id !== user.id) {
-              const room = rooms.find((r) => r.id === msg.room_id);
-              if (room) {
-                const pid =
-                  room.user1_id === user.id
-                    ? room.user2_id
-                    : room.user1_id;
-                if (!blockedPartnerIds.has(pid)) {
-                  incrementUnread();
-                }
-              }
-            }
-          },
-        )
-        .subscribe();
     };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibility,
+      );
+    };
+  }, [fetchUnreadCount]);
 
-    fetchUnread();
+  useEffect(() => {
+    const supabase = createClient();
+
+    const channel = supabase
+      .channel(`bottom-tab-messages-${Date.now()}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+        },
+        (payload) => {
+          const msg = payload.new as {
+            sender_id: string;
+            room_id: string;
+          };
+          const uid = userIdRef.current;
+          if (!uid || msg.sender_id === uid) return;
+
+          const room = roomsRef.current.find(
+            (r) => r.id === msg.room_id,
+          );
+          if (room) {
+            const pid =
+              room.user1_id === uid ? room.user2_id : room.user1_id;
+            if (!blockedRef.current.has(pid)) {
+              incrementUnread();
+            }
+          }
+        },
+      )
+      .subscribe();
 
     return () => {
-      mounted = false;
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
-  }, [setUnreadCount, incrementUnread]);
+  }, [incrementUnread]);
 
   const tabs: TabItem[] = [
     { href: '/home', label: '홈', icon: Home },

@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import {
   MessageCircleMore,
@@ -48,13 +54,16 @@ export default function ChatListPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchRooms = async () => {
+  const userIdRef = useRef<string | null>(null);
+
+  const fetchRooms = useCallback(async () => {
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
     setCurrentUserId(user.id);
+    userIdRef.current = user.id;
 
     const { data: chatRooms } = await supabase
       .from('chat_rooms')
@@ -166,26 +175,41 @@ export default function ChatListPage() {
 
     setRooms(enrichedRooms);
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let cancelled = false;
     const load = async () => {
       await fetchRooms();
-      if (!mounted) return;
+      if (cancelled) return;
     };
     load();
     return () => {
-      mounted = false;
+      cancelled = true;
     };
-  }, []);
+  }, [fetchRooms]);
+
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchRooms();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      document.removeEventListener(
+        'visibilitychange',
+        handleVisibility,
+      );
+    };
+  }, [fetchRooms]);
 
   useEffect(() => {
     if (!currentUserId) return;
     const supabase = createClient();
 
     const channel = supabase
-      .channel('chat-list-messages')
+      .channel(`chat-list-messages-${Date.now()}`)
       .on(
         'postgres_changes',
         {
@@ -195,20 +219,30 @@ export default function ChatListPage() {
         },
         (payload) => {
           const newMsg = payload.new as Message;
-          setRooms((prev) =>
-            prev.map((room) => {
+          const uid = userIdRef.current;
+          setRooms((prev) => {
+            const updated = prev.map((room) => {
               if (room.id !== newMsg.room_id) return room;
               if (room.isBlocked) return room;
               return {
                 ...room,
                 lastMessage: newMsg,
                 unreadCount:
-                  newMsg.sender_id !== currentUserId
+                  newMsg.sender_id !== uid
                     ? room.unreadCount + 1
                     : room.unreadCount,
               };
-            }),
-          );
+            });
+            return updated.sort((a, b) => {
+              const timeA = a.lastMessage
+                ? new Date(a.lastMessage.created_at).getTime()
+                : new Date(a.created_at).getTime();
+              const timeB = b.lastMessage
+                ? new Date(b.lastMessage.created_at).getTime()
+                : new Date(b.created_at).getTime();
+              return timeB - timeA;
+            });
+          });
         },
       )
       .subscribe();
