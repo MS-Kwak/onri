@@ -67,8 +67,8 @@ export async function GET(
       .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`)
       .order('created_at', { ascending: false }),
     admin
-      .from('attendance')
-      .select('date, streak, hearts_rewarded')
+      .from('attendances')
+      .select('date, streak, rewarded_hearts')
       .eq('user_id', userId)
       .order('date', { ascending: false })
       .limit(14),

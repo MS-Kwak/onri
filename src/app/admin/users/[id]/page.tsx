@@ -93,7 +93,7 @@ type Block = {
 type AttendanceRow = {
   date: string;
   streak: number;
-  hearts_rewarded: number;
+  rewarded_hearts: number;
 };
 
 type Tab =
@@ -206,7 +206,9 @@ export default function AdminUserDetailPage() {
       if (cancelled) return;
     };
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [fetchData]);
 
   const toggleActive = async () => {
@@ -799,7 +801,7 @@ function AttendanceTab({
                 </span>
               </div>
               <span className="flex items-center gap-1 text-sm font-medium text-green-500">
-                +{a.hearts_rewarded}
+                +{a.rewarded_hearts}
                 <Heart size={11} className="fill-green-500" />
               </span>
             </div>
