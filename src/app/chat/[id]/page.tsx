@@ -174,11 +174,15 @@ export default function ChatRoomPage({
   }, [searchIndex, searchResults]);
 
   const scrollToBottom = useCallback(() => {
-    requestAnimationFrame(() => {
+    const doScroll = () => {
       scrollRef.current?.scrollTo({
         top: scrollRef.current.scrollHeight,
         behavior: 'instant',
       });
+    };
+    requestAnimationFrame(() => {
+      doScroll();
+      setTimeout(doScroll, 50);
     });
   }, []);
 
@@ -401,6 +405,7 @@ export default function ChatRoomPage({
       setUploadingImage(false);
       setImagePreview(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      scrollToBottom();
     }
   };
 
@@ -425,6 +430,7 @@ export default function ChatRoomPage({
 
     setInputText('');
     setSending(false);
+    scrollToBottom();
     inputRef.current?.focus();
   };
 

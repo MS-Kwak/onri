@@ -212,10 +212,33 @@ export default function SignalPage() {
     };
   }, [setBalance]);
 
+  const groupedReceivedSignals = useMemo(() => {
+    const groups = new Map<string, Signal[]>();
+    receivedSignals.forEach((s) => {
+      const existing = groups.get(s.fromUserId);
+      if (existing) {
+        existing.push(s);
+      } else {
+        groups.set(s.fromUserId, [s]);
+      }
+    });
+    return Array.from(groups.values()).map((group) => {
+      const hasAccepted = group.some((s) => s.status === 'accepted');
+      const hasPending = group.some((s) => s.status === 'pending');
+      const representative = hasAccepted
+        ? group.find((s) => s.status === 'accepted')!
+        : hasPending
+          ? group.find((s) => s.status === 'pending')!
+          : group[0];
+      return { ...representative, sendCount: group.length };
+    });
+  }, [receivedSignals]);
+
   const pendingCount = useMemo(
     () =>
-      receivedSignals.filter((s) => s.status === 'pending').length,
-    [receivedSignals],
+      groupedReceivedSignals.filter((s) => s.status === 'pending')
+        .length,
+    [groupedReceivedSignals],
   );
 
   const groupedSentSignals = useMemo(() => {
@@ -250,7 +273,7 @@ export default function SignalPage() {
 
       setReceivedSignals((prev) =>
         prev.map((s) =>
-          s.id === signal.id
+          s.fromUserId === signal.fromUserId
             ? { ...s, status: 'accepted' as const }
             : s,
         ),
@@ -280,7 +303,7 @@ export default function SignalPage() {
 
       setReceivedSignals((prev) =>
         prev.map((s) =>
-          s.id === signal.id
+          s.fromUserId === signal.fromUserId
             ? { ...s, status: 'declined' as const }
             : s,
         ),
@@ -316,7 +339,9 @@ export default function SignalPage() {
   };
 
   const signals =
-    activeTab === 'received' ? receivedSignals : groupedSentSignals;
+    activeTab === 'received'
+      ? groupedReceivedSignals
+      : groupedSentSignals;
   const pendingSignals = signals.filter(
     (s) => s.status === 'pending',
   );
@@ -559,6 +584,14 @@ function SignalCard({
               </button>
             </>
           )}
+
+          {tab === 'received' &&
+            signal.sendCount &&
+            signal.sendCount > 1 && (
+              <span className="rounded-lg bg-gold/10 px-2 py-1 text-[10px] font-medium text-gold/70">
+                {signal.sendCount}회 수신
+              </span>
+            )}
 
           {isAccepted && (
             <button
