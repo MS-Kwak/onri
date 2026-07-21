@@ -173,36 +173,43 @@ export default function AdminUserDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [processing, setProcessing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/users/${userId}`);
-      if (!res.ok) {
-        toast.error('유저 정보를 불러올 수 없습니다');
-        setLoading(false);
-        return;
+  const applyData = useCallback((data: Record<string, unknown>) => {
+    setProfile(data.profile as ProfileData);
+    setPhotos(data.photos as Photo[]);
+    setHeartBalance(data.heartBalance as number);
+    setTransactions(data.transactions as Transaction[]);
+    setSignalsSent(data.signalsSent as Signal[]);
+    setSignalsReceived(data.signalsReceived as Signal[]);
+    setReports(data.reports as Report[]);
+    setBlocks(data.blocks as Block[]);
+    setAttendance(data.attendance as AttendanceRow[]);
+    setNicknameMap(data.nicknameMap as Record<string, string>);
+  }, []);
+
+  const fetchData = useCallback(
+    async (showSpinner = true) => {
+      if (showSpinner) setLoading(true);
+      try {
+        const res = await fetch(`/api/admin/users/${userId}`);
+        if (!res.ok) {
+          toast.error('유저 정보를 불러올 수 없습니다');
+          if (showSpinner) setLoading(false);
+          return;
+        }
+        const data = await res.json();
+        applyData(data);
+      } catch {
+        toast.error('데이터 로딩 실패');
       }
-      const data = await res.json();
-      setProfile(data.profile);
-      setPhotos(data.photos);
-      setHeartBalance(data.heartBalance);
-      setTransactions(data.transactions);
-      setSignalsSent(data.signalsSent);
-      setSignalsReceived(data.signalsReceived);
-      setReports(data.reports);
-      setBlocks(data.blocks);
-      setAttendance(data.attendance);
-      setNicknameMap(data.nicknameMap);
-    } catch {
-      toast.error('데이터 로딩 실패');
-    }
-    setLoading(false);
-  }, [userId]);
+      if (showSpinner) setLoading(false);
+    },
+    [userId, applyData],
+  );
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      await fetchData();
+      await fetchData(true);
       if (cancelled) return;
     };
     load();
@@ -210,6 +217,11 @@ export default function AdminUserDetailPage() {
       cancelled = true;
     };
   }, [fetchData]);
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    fetchData(false);
+  };
 
   const toggleActive = async () => {
     if (!profile) return;
@@ -354,7 +366,7 @@ export default function AdminUserDetailPage() {
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
                 activeTab === tab.id
                   ? 'bg-background text-foreground shadow-sm'
