@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import * as PortOne from '@portone/browser-sdk/v2';
 import {
   ArrowLeft,
@@ -69,42 +69,98 @@ type Transaction = {
   created_at: string;
 };
 
-export default function HeartsPage() {
+export default function HeartsPageWrapper() {
+  return (
+    <Suspense>
+      <HeartsPage />
+    </Suspense>
+  );
+}
+
+function HeartsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { balance, setBalance } = useHeartStore();
   const [selectedPkg, setSelectedPkg] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verifyingRedirect, setVerifyingRedirect] = useState(false);
+
+  const refreshData = useCallback(async () => {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const [heartRes, txRes] = await Promise.all([
+      supabase
+        .from('hearts')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single(),
+      supabase
+        .from('heart_transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(20),
+    ]);
+
+    if (heartRes.data) setBalance(heartRes.data.balance);
+    if (txRes.data) setTransactions(txRes.data);
+  }, [setBalance]);
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [heartRes, txRes] = await Promise.all([
-        supabase
-          .from('hearts')
-          .select('balance')
-          .eq('user_id', user.id)
-          .single(),
-        supabase
-          .from('heart_transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(20),
-      ]);
-
-      if (heartRes.data) setBalance(heartRes.data.balance);
-      if (txRes.data) setTransactions(txRes.data);
+      await refreshData();
       setLoading(false);
     }
     load();
-  }, [setBalance]);
+  }, [refreshData]);
+
+  useEffect(() => {
+    const paymentId =
+      searchParams.get('paymentId') || searchParams.get('payment_id');
+    if (!paymentId || verifyingRedirect) return;
+
+    const verifyRedirectPayment = async () => {
+      setVerifyingRedirect(true);
+      try {
+        const verifyRes = await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paymentId }),
+        });
+
+        const result = await verifyRes.json();
+
+        if (verifyRes.ok && result.success) {
+          setBalance(result.balance);
+          toast.success(`하트 ${result.amount}개가 충전되었어요`, {
+            icon: <Heart size={16} className="fill-gold text-gold" />,
+          });
+          await refreshData();
+        } else if (result.error) {
+          toast.error(result.error);
+        }
+      } catch {
+        toast.error('결제 확인에 실패했습니다');
+      }
+
+      router.replace('/my/hearts', { scroll: false });
+      setVerifyingRedirect(false);
+    };
+
+    verifyRedirectPayment();
+  }, [
+    searchParams,
+    verifyingRedirect,
+    setBalance,
+    refreshData,
+    router,
+  ]);
 
   const handlePurchase = async () => {
     const pkg = HEART_PACKAGES.find((p) => p.id === selectedPkg);
@@ -149,7 +205,7 @@ export default function HeartsPage() {
           pc: 'IFRAME',
           mobile: 'REDIRECTION',
         },
-        redirectUrl: `${window.location.origin}/my/hearts`,
+        redirectUrl: `${window.location.origin}/my/hearts?paymentId=${paymentId}`,
       });
 
       if (!response || response.code != null) {
