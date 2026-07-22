@@ -302,7 +302,8 @@ function PrivacyContent() {
       <Paragraph>① 필수 수집 항목:</Paragraph>
       <ul>
         <ListItem>
-          본인인증 정보: 이름, 생년월일, 성별, 휴대전화 번호
+          본인인증 정보: 이름, 생년월일, 성별, 휴대전화 번호, 암호화된
+          이용자 확인값(CI)
         </ListItem>
         <ListItem>
           계정 정보: 소셜 로그인 식별자(카카오/네이버/애플), 이메일
